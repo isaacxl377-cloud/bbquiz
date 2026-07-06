@@ -3,697 +3,721 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>耶稣生平知多少</title>
+    <title>耶稣生平互动答题系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            background-color: #F2F2F7; /* Apple system gray background */
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
-        .ios-shadow {
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        .slide-up {
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
+        /* 动画效果 */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Option button active states */
-        .option-btn {
-            transition: all 0.2s ease;
+        /* 选项按钮选中状态 */
+        .option-correct {
+            background-color: #d1fae5 !important;
+            border-color: #10b981 !important;
+            color: #065f46 !important;
         }
-        .option-btn:active {
-            transform: scale(0.98);
+        .option-wrong {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #991b1b !important;
+        }
+        .option-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
         }
         
-        /* Hide scrollbar for clean UI but allow scrolling */
-        ::-webkit-scrollbar {
+        /* 隐藏滚动条但保留滚动功能 */
+        .no-scrollbar::-webkit-scrollbar {
             display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body class="text-gray-900 h-screen flex justify-center overflow-hidden">
+<body class="bg-gray-900 flex justify-center overflow-hidden h-screen" style="height: 100dvh;">
 
-    <!-- Mobile Container -->
+    <!-- 移动端主容器 (限制最大宽度并充满动态屏幕高度) -->
     <div id="app" class="w-full max-w-md h-full bg-[#F2F2F7] flex flex-col relative shadow-2xl overflow-hidden">
-        <!-- Content will be injected here via JS -->
+        
+        <!-- ================= 1. 首页 (Home Screen) ================= -->
+        <div id="homeScreen" class="flex flex-col items-center justify-center h-full p-8 w-full">
+            <div class="w-24 h-24 bg-blue-600 rounded-[2rem] shadow-lg flex items-center justify-center mb-8">
+                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2 text-center">耶稣生平答题</h1>
+            <p class="text-lg text-gray-500 mb-10 text-center">基于中文圣经和合本</p>
+            
+            <button onclick="startQuiz(false)" class="w-full bg-blue-600 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-blue-700 active:scale-95 transition-all text-xl mb-4">
+                开始全部答题 (50题)
+            </button>
+            
+            <!-- 错题按钮，如果有错题则动态显示 -->
+            <button id="mistakesBtn" onclick="startQuiz(true)" class="hidden w-full bg-red-100 text-red-600 font-bold py-5 px-6 rounded-2xl shadow-sm hover:bg-red-200 active:scale-95 transition-all text-xl">
+                错题订正 (0)
+            </button>
+        </div>
+
+        <!-- ================= 2. 答题页面 (Quiz Screen) ================= -->
+        <div id="quizScreen" class="hidden flex-col h-full w-full">
+            <!-- 顶部进度与计时栏 -->
+            <div class="bg-white pt-6 pb-4 px-6 rounded-b-[2rem] shadow-sm z-20 shrink-0">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-gray-500 font-bold text-lg tracking-wider" id="progressText">1 / 50</span>
+                    <span class="text-blue-600 font-bold text-lg font-mono bg-blue-50 px-3 py-1 rounded-lg" id="timerDisplay">00:00</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out" style="width: 2%"></div>
+                </div>
+            </div>
+
+            <!-- 问题与选项滚动区 -->
+            <div class="flex-grow overflow-y-auto px-6 py-6 pb-32 no-scrollbar" id="questionArea">
+                <h2 id="questionText" class="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 leading-snug tracking-wide">
+                    <!-- 问题内容注入 -->
+                </h2>
+                
+                <div class="space-y-4" id="optionsContainer">
+                    <!-- 选项注入 -->
+                </div>
+                
+                <!-- 反馈区域 (初始隐藏) -->
+                <div id="feedbackBox" class="hidden mt-8 slide-up">
+                    <div id="feedbackBanner" class="p-4 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-xl">
+                        <!-- 结果标志注入 -->
+                    </div>
+                    <div class="bg-blue-50/70 rounded-2xl p-5 border-2 border-blue-100">
+                        <p id="feedbackRef" class="text-base font-bold text-blue-600 mb-2">【经文出处】</p>
+                        <p id="feedbackVerse" class="text-lg text-gray-800 leading-relaxed font-medium">
+                            <!-- 经文内容注入 -->
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 绝对定位的底部操作区 (不会被遮挡) -->
+            <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#F2F2F7] via-[#F2F2F7] to-transparent z-30">
+                <button id="nextBtn" onclick="nextQuestion()" class="w-full bg-gray-900 text-white font-bold py-5 px-6 rounded-2xl shadow-xl hover:bg-black active:scale-95 transition-all text-xl opacity-0 translate-y-4 pointer-events-none">
+                    下一题
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= 3. 结果页面 (Result Screen) ================= -->
+        <div id="resultScreen" class="hidden flex-col items-center justify-center h-full p-8 w-full slide-up">
+            <div class="bg-white w-full rounded-[2rem] shadow-lg p-8 flex flex-col items-center text-center">
+                <div id="resultIcon" class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">完成答题！</h2>
+                <p class="text-gray-500 mb-8 text-lg" id="resultDesc">本次练习情况如下</p>
+                
+                <div class="flex w-full space-x-4 mb-8">
+                    <div class="flex-1 bg-blue-50 p-4 rounded-2xl">
+                        <p class="text-sm text-blue-600 font-bold mb-1">得分</p>
+                        <p class="text-3xl font-bold text-gray-900" id="scoreDisplay">0</p>
+                    </div>
+                    <div class="flex-1 bg-orange-50 p-4 rounded-2xl">
+                        <p class="text-sm text-orange-600 font-bold mb-1">用时</p>
+                        <p class="text-3xl font-bold text-gray-900" id="timeDisplay">00:00</p>
+                    </div>
+                </div>
+
+                <button onclick="returnToHome()" class="w-full bg-gray-900 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-black active:scale-95 transition-all text-xl mb-4">
+                    返回首页
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const questions = [
+        // === 题目数据 (完整 50 题) ===
+        const allQuestions = [
             {
                 q: "耶稣肉身的父母是谁？他们住在哪里？",
-                options: ["约瑟和马利亚；犹太的伯利恒", "撒迦利亚和以利沙伯；耶路撒冷", "约瑟和马利亚；加利利的拿撒勒", "亚勒腓和马利亚；迦百农"],
-                answer: 2,
-                verse: "到了第六个月，天使加百列奉神的差遣往加利利的一座城去，这城名叫拿撒勒，到一个童女那里，是已经许配大卫家的一个人，名叫约瑟。童女的名字叫马利亚。",
-                ref: "路加福音 1:26-27"
-            },
-            {
-                q: "耶稣的先锋施洗约翰的父母是谁？",
-                options: ["西门和安得烈", "约瑟和马利亚", "亚居拉和百基拉", "撒迦利亚和以利沙伯"],
-                answer: 3,
-                verse: "当犹太王希律的时候，亚比雅班里有一个祭司，名叫撒迦利亚；他妻子是亚伦的后人，名叫以利沙伯。",
-                ref: "路加福音 1:5"
+                options: ["亚伯拉罕和撒拉；耶路撒冷", "约瑟和马利亚；拿撒勒", "撒迦利亚和以利沙伯；伯利恒", "大卫和拔示巴；拿撒勒"],
+                answer: 1,
+                ref: "路加福音 1:26-27",
+                verse: "到了第六个月，天使加百列奉神的差遣往加利利的一座城去（这城名叫拿撒勒），到一个童女那里，是已经许配大卫家的一个人，名叫约瑟。童女的名字叫马利亚。"
             },
             {
                 q: "当耶稣要被圣灵感孕时，谁找到了约瑟对他说了什么？",
-                options: ["天使长米迦勒；说你要逃往埃及", "主的使者；说不要怕，只管娶过你的妻子马利亚来", "祭司长；说你的妻子怀孕了", "先知；说你将要作王"],
-                answer: 1,
-                verse: "正思念这事的时候，有主的使者向他梦中显现，说：“大卫的子孙约瑟，不要怕，只管娶过你的妻子马利亚来，因她所怀的孕是从圣灵来的。”",
-                ref: "马太福音 1:20"
-            },
-            {
-                q: "约瑟醒了以后，是怎么做的？",
-                options: ["暗暗地把马利亚休了", "遵着主使者的吩咐把妻子娶过来，只是没有和她同房", "立刻带着马利亚逃往埃及", "告诉了全城的人"],
-                answer: 1,
-                verse: "约瑟醒了，起来，就遵着主使者的吩咐把妻子娶过来；只是没有和她同房，等她生了儿子，就给他起名叫耶稣。",
-                ref: "马太福音 1:24-25"
-            },
-            {
-                q: "当耶稣要被圣灵感孕时，天使找到了童女马利亚，对她说了什么？",
-                options: ["蒙大恩的女子，我问你安，主和你同在了！", "你要逃离这座城", "你将要受许多的苦", "你的亲戚以利沙伯生病了"],
-                answer: 0,
-                verse: "天使进去，对她说：“蒙大恩的女子，我问你安，主和你同在了！”",
-                ref: "路加福音 1:28"
-            },
-            {
-                q: "马利亚对天使宣告她将怀孕生子是如何回应的？",
-                options: ["这怎么可能呢？", "我是主的使女，情愿照你的话成就在我身上。", "我要去问问约瑟。", "主啊，我不敢当。"],
-                answer: 1,
-                verse: "马利亚说：“我是主的使女，情愿照你的话成就在我身上。”天使就离开她去了。",
-                ref: "路加福音 1:38"
-            },
-            {
-                q: "马利亚在天使报信后，去探望了谁，并在那里住了约三个月？",
-                options: ["拿俄米", "马大", "以利沙伯", "抹大拉的马利亚"],
+                options: ["牧羊人；在伯利恒将生救主", "天使加百列；你要作先知的父亲", "主的使者；不要怕，只管娶过你的妻子马利亚来", "东方博士；那生下来作犹太人之王的在哪里"],
                 answer: 2,
-                verse: "那时候，马利亚起身，急忙往山地里去，来到犹大的一座城... 进了撒迦利亚的家，问以利沙伯安。马利亚和以利沙伯同住，约有三个月，就回家去了。",
-                ref: "路加福音 1:39, 56"
+                ref: "马太福音 1:20",
+                verse: "正思念这事的时候，有主的使者向他梦中显现，说：“大卫的子孙约瑟，不要怕，只管娶过你的妻子马利亚来，因她所怀的孕是从圣灵来的。”"
+            },
+            {
+                q: "约瑟听到使者的话以后是怎么做的？",
+                options: ["暗暗地把她休了", "要求马利亚离开", "遵着主使者的吩咐把妻子娶过来", "带着马利亚逃往埃及"],
+                answer: 2,
+                ref: "马太福音 1:24",
+                verse: "约瑟醒了，起来，就遵着主使者的吩咐把妻子娶过来。"
+            },
+            {
+                q: "当耶稣要被圣灵感孕时，谁找到了童女马利亚？",
+                options: ["主的使者", "天使加百列", "先知以赛亚", "大祭司"],
+                answer: 1,
+                ref: "路加福音 1:26-27",
+                verse: "到了第六个月，天使加百列奉神的差遣往加利利的一座城去...童女的名字叫马利亚。"
+            },
+            {
+                q: "天使对马利亚说了什么？",
+                options: ["你要献上祭物", "蒙大恩的女子，我问你安，主和你同在了！", "你要逃往埃及去", "你将成为多国的母"],
+                answer: 1,
+                ref: "路加福音 1:28,31",
+                verse: "天使进去，对她说：“蒙大恩的女子，我问你安，主和你同在了！”...你要怀孕生子，可以给他起名叫耶稣。"
+            },
+            {
+                q: "马利亚听见天使说她要怀孕生子，她是如何回应的？",
+                options: ["我不信，因为我没有出嫁", "这事怎么能成就呢？", "我是主的使女，情愿照你的话成就在我身上", "请你给我一个神迹"],
+                answer: 2,
+                ref: "路加福音 1:38",
+                verse: "马利亚说：“我是主的使女，情愿照你的话成就在我身上。”天使就离开她去了。"
             },
             {
                 q: "耶稣是怎样成胎的？",
-                options: ["借着先知的宣告", "圣灵降临在马利亚身上，至高者的能力荫庇她", "借着天使的触摸", "按着肉身的常理"],
-                answer: 1,
-                verse: "天使回答说：“圣灵要临到你身上，至高者的能力要荫庇你，因此所要生的圣者必称为神的儿子。”",
-                ref: "路加福音 1:35"
-            },
-            {
-                q: "谁做罗马皇帝时耶稣出生？",
-                options: ["提庇留", "尼禄", "该撒亚古士督（奥古斯都）", "克劳第"],
+                options: ["从约瑟而生", "由先知预言而生", "从圣灵感孕", "由祭司祈求而来"],
                 answer: 2,
-                verse: "当那些日子，该撒亚古士督有旨意下来，叫天下人民都报名上册。",
-                ref: "路加福音 2:1"
-            },
-            {
-                q: "耶稣出生时，是谁作叙利亚巡抚负责人口普查的？",
-                options: ["本丢彼拉多", "腓力", "居里扭", "希律"],
-                answer: 2,
-                verse: "这是居里扭作叙利亚巡抚的时候，头一次行报名上册的事。",
-                ref: "路加福音 2:2"
+                ref: "马太福音 1:20",
+                verse: "有主的使者向他梦中显现，说：“...不要怕，只管娶过你的妻子马利亚来，因她所怀的孕是从圣灵来的。”"
             },
             {
                 q: "耶稣生在哪座城里的什么地方？",
-                options: ["耶路撒冷的圣殿里", "拿撒勒的木匠家里", "犹太的伯利恒，客店的马槽里", "迦百农的海边"],
+                options: ["拿撒勒的客店里", "耶路撒冷的圣殿里", "伯利恒的客店马槽里", "伯大尼的家里"],
                 answer: 2,
-                verse: "约瑟也从加利利的拿撒勒城上犹太去，到了大卫的城，名叫伯利恒... 就生了头胎的儿子，用布包起来，放在马槽里，因为客店里没有地方。",
-                ref: "路加福音 2:4, 7"
+                ref: "路加福音 2:4,7",
+                verse: "约瑟也从加利利的拿撒勒城上犹太去，到了大卫的城，名叫伯利恒...就生了头胎的儿子，用布包起来，放在马槽里，因为客店里没有地方。"
             },
             {
-                q: "天使把耶稣降生的好消息最先报给了谁？",
-                options: ["耶路撒冷的祭司", "伯利恒野地里的牧羊人", "东方的博士", "希律王"],
-                answer: 1,
-                verse: "在伯利恒之野地里有牧羊的人，夜间按着更次看守羊群。有主的使者站在他们旁边... 那天使对他们说：“不要惧怕！我报给你们大喜的信息，是关乎万民的。”",
-                ref: "路加福音 2:8-10"
+                q: "天使把耶稣降生的好消息报给了谁？",
+                options: ["大祭司", "东方博士", "野地里的牧羊人", "希律王"],
+                answer: 2,
+                ref: "路加福音 2:8-10",
+                verse: "在伯利恒之野地里有牧羊的人，夜间按着更次看守羊群。有主的使者站在他们旁边...天使对他们说：“不要惧怕！我报给你们大喜的信息...”"
             },
             {
                 q: "那些听到好消息的牧羊人是怎么做的？",
-                options: ["急忙去了，寻见马利亚和约瑟，又有那婴孩卧在马槽里", "等到天亮才进城", "四处宣扬但没有去寻找", "不相信天使的话"],
-                answer: 0,
-                verse: "他们急忙去了，就寻见马利亚和约瑟，又有那婴孩卧在马槽里。",
-                ref: "路加福音 2:16"
+                options: ["等天亮再去寻找", "急忙去了，找到马利亚和约瑟，还有那婴孩", "回家睡觉", "去告诉希律王"],
+                answer: 1,
+                ref: "路加福音 2:15-16",
+                verse: "众天使离开他们，升天去了。牧羊的人彼此说：“我们往伯利恒去，看看所成的事...”他们急忙去了，就寻见马利亚和约瑟，又有那婴孩卧在马槽里。"
+            },
+            {
+                q: "谁做罗马皇帝时耶稣出生？",
+                options: ["提庇留", "奥古斯都", "尼禄", "革老丢"],
+                answer: 1,
+                ref: "路加福音 2:1",
+                verse: "当那些日子，该撒亚古士督有旨意下来，叫天下人民都报名上册。"
+            },
+            {
+                q: "耶稣出生时，是谁负责人口普查的？",
+                options: ["彼拉多", "希律", "居里扭作叙利亚巡抚的时候", "亚基老"],
+                answer: 2,
+                ref: "路加福音 2:2",
+                verse: "这是居里扭作叙利亚巡抚的时候，头一次行报名上册的事。"
             },
             {
                 q: "耶稣的名字是什么意思？",
-                options: ["神与我们同在", "受膏者", "救主；因他要将自己的百姓从罪恶里救出来", "伟大的先知"],
+                options: ["先知；因他要教导神的律法", "君王；因他要坐在大卫的宝座上", "救主；因他要将自己的百姓从罪恶里救出来", "祭司；因他要献上赎罪祭"],
                 answer: 2,
-                verse: "她将要生一个儿子，你要给他起名叫耶稣，因他要将自己的百姓从罪恶里救出来。",
-                ref: "马太福音 1:21"
+                ref: "马太福音 1:21",
+                verse: "她将要生一个儿子，你要给他起名叫耶稣，因他要将自己的百姓从罪恶里救出来。"
             },
             {
-                q: "“以马内利”翻出来是什么意思？",
-                options: ["和平的君", "神与我们同在", "拯救者", "神的羔羊"],
+                q: "以马内利是什么意思？",
+                options: ["神是拯救", "神与我们同在", "神的受膏者", "神的羔羊"],
                 answer: 1,
-                verse: "“必有童女怀孕生子，人要称他的名为以马内利。”（以马内利翻出来就是“神与我们同在”。）",
-                ref: "马太福音 1:23"
+                ref: "马太福音 1:23",
+                verse: "“必有童女怀孕生子；人要称他的名为以马内利。”（以马内利翻出来就是“神与我们同在”。）"
             },
             {
-                q: "耶稣出生满八天，父母为他行了什么礼？",
-                options: ["洗礼", "奉献礼", "割礼", "赎罪祭"],
-                answer: 2,
-                verse: "满了八天，就给孩子行割礼，与他起名叫耶稣；这就是没有成胎以前，天使所起的名。",
-                ref: "路加福音 2:21"
-            },
-            {
-                q: "耶稣的父母按律法满了洁净的日子，带耶稣上耶路撒冷去，献上什么祭物？",
-                options: ["一头公牛", "一只羊羔", "一对斑鸠或两只雏鸽", "初熟的麦子"],
-                answer: 2,
-                verse: "又要照主律法上所记的，献祭，就是一对斑鸠或两只雏鸽。",
-                ref: "路加福音 2:24"
-            },
-            {
-                q: "在圣殿里，有位又公义又虔诚的人，得圣灵启示用手接过耶稣称颂神，他叫什么名字？",
-                options: ["亚拿", "撒迦利亚", "西缅", "尼哥底母"],
-                answer: 2,
-                verse: "在耶路撒冷有一个人，名叫西缅；这人又公义又虔诚，盼望以色列的安慰者来到... 西缅就用手接过他来，称颂神",
-                ref: "路加福音 2:25, 28"
-            },
-            {
-                q: "圣殿里还有一位女先知，禁食祈求，昼夜侍奉神，也来称谢神，她叫什么名字？",
-                options: ["马利亚", "以利沙伯", "亚拿", "户勒大"],
-                answer: 2,
-                verse: "又有女先知，名叫亚拿... 现在已经八十四岁，并不离开圣殿，禁食祈求，昼夜侍奉神。",
-                ref: "路加福音 2:36-37"
-            },
-            {
-                q: "耶稣生在伯利恒时，东方博士蒙神用星指示，有什么反应？",
-                options: ["感到惊恐", "特来拜他", "回去报告长官", "派人去打听"],
+                q: "耶稣生在伯利恒时，东方博士蒙神用星指示，有怎样的反应?",
+                options: ["感到惊恐不安", "特来拜他，俯伏拜那小孩子，献上礼物", "立刻去告诉大祭司", "返回东方查考书卷"],
                 answer: 1,
-                verse: "“那生下来作犹太人之王的在哪里？我们在东方看见他的星，特来拜他。”",
-                ref: "马太福音 2:2"
+                ref: "马太福音 2:2,11",
+                verse: "那生下来作犹太人之王的在哪里？我们在东方看见他的星，特来拜他...进了房子，看见小孩子和他母亲马利亚，就俯伏拜那小孩子，揭开宝盒，拿黄金、乳香、没药为礼物献给他。"
             },
             {
-                q: "东方博士看见那星在前面行，直行到小孩子的地方，有何反应？",
-                options: ["就大大地欢喜", "觉得很神奇", "心里害怕", "犹豫不决"],
-                answer: 0,
-                verse: "他们看见那星，就大大地欢喜。",
-                ref: "马太福音 2:10"
-            },
-            {
-                q: "博士向小孩子献上的三样礼物是什么？",
-                options: ["牛、羊、鸽子", "金子、银子、宝石", "黄金、乳香、没药", "没药、沉香、桂皮"],
+                q: "东方博士献给小孩子耶稣的礼物是什么？",
+                options: ["牛、羊、鸽子", "金银宝石", "黄金、乳香、没药", "细麻布和香料"],
                 answer: 2,
-                verse: "进了房子，看见小孩子和他母亲马利亚，就俯伏拜那小孩子，揭开宝盒，拿黄金、乳香、没药为礼物献给他。",
-                ref: "马太福音 2:11"
+                ref: "马太福音 2:11",
+                verse: "进了房子，看见小孩子和他母亲马利亚，就俯伏拜那小孩子，揭开宝盒，拿黄金、乳香、没药为礼物献给他。"
             },
             {
-                q: "博士因为在梦中被主指示，不要回去见希律，就怎样了？",
-                options: ["就在伯利恒住下", "从别的路回本地去了", "去了埃及", "藏在旷野"],
-                answer: 1,
-                verse: "博士因为在梦中被主指示不要回去见希律，就从别的路回本地去了。",
-                ref: "马太福音 2:12"
-            },
-            {
-                q: "耶稣生在伯利恒时，希律王听到博士寻找“犹太人之王”的消息后，是怎样的反应？",
-                options: ["十分高兴", "心里不安", "立刻去朝拜", "毫不关心"],
-                answer: 1,
-                verse: "希律王听见了，就心里不安；耶路撒冷合城的人也都不安。",
-                ref: "马太福音 2:3"
-            },
-            {
-                q: "耶路撒冷合城的人听到了博士的话，是怎样的反应？",
-                options: ["欢呼雀跃", "预备迎接", "也都不安", "不以为然"],
+                q: "耶稣生在伯利恒时，希律王听到这个消息后，是怎样的反应？",
+                options: ["非常高兴", "立刻去敬拜他", "听见了，就心里不安", "没有理会"],
                 answer: 2,
-                verse: "希律王听见了，就心里不安；耶路撒冷合城的人也都不安。",
-                ref: "马太福音 2:3"
+                ref: "马太福音 2:3",
+                verse: "希律王听见了，就心里不安；耶路撒冷合城的人也都不安。"
+            },
+            {
+                q: "耶稣生在伯利恒时，耶路撒冷城的人听到了，是怎样的反应？",
+                options: ["欢呼雀跃", "合城的人也都不安", "举行盛大庆典", "预备迎接君王"],
+                answer: 1,
+                ref: "马太福音 2:3",
+                verse: "希律王听见了，就心里不安；耶路撒冷合城的人也都不安。"
             },
             {
                 q: "天使指示约瑟叫他们带小孩耶稣逃往哪里去？",
-                options: ["叙利亚", "拿撒勒", "埃及", "大马色"],
+                options: ["叙利亚", "撒马利亚", "埃及", "大马士革"],
                 answer: 2,
-                verse: "有主的使者向约瑟梦中显现，说：“起来！带着小孩子同他母亲逃往埃及，住在那里，等我吩咐你；因为希律必寻找小孩子，要除灭他。”",
-                ref: "马太福音 2:13"
+                ref: "马太福音 2:13",
+                verse: "他们去后，有主的使者向约瑟梦中显现，说：“起来！带着小孩子同他母亲逃往埃及，住在那里，等我吩咐你；因为希律必寻找小孩子，要除灭他。”"
             },
             {
-                q: "希律为了除掉耶稣，下令杀死了伯利恒城里多大的男孩？",
-                options: ["一岁以里的", "两岁以里的", "三岁以里的", "刚出生的"],
-                answer: 1,
-                verse: "希律见自己被博士愚弄，就大大发怒，差人将伯利恒城里并四境所有的男孩，照着他向博士仔细查问的时候，凡两岁以里的，都杀尽了。",
-                ref: "马太福音 2:16"
+                q: "希律王为了除灭小孩子耶稣，下令杀死了多大岁数的男孩？",
+                options: ["半岁以里的", "一岁以里的", "两岁以里的", "三岁以里的"],
+                answer: 2,
+                ref: "马太福音 2:16",
+                verse: "希律见自己被博士愚弄，就大大发怒，差人将伯利恒城里并四境所有的男孩，照着他向博士仔细查问的时候，凡两岁以里的，都杀尽了。"
             },
             {
-                q: "当要杀害耶稣的希律死了以后，耶稣和父母定居在哪里？",
-                options: ["耶路撒冷", "伯利恒", "加利利境内的拿撒勒", "犹太的旷野"],
+                q: "当要杀害耶稣的希律死了以后，约瑟带耶稣回来，因为怕亚基老，最终定居在哪里？",
+                options: ["伯利恒", "耶路撒冷", "拿撒勒", "迦百农"],
                 answer: 2,
-                verse: "只因听见亚基老接着他父亲希律作了犹太王，就怕往那里去，又在梦中被主指示，便往加利利境内去了，到了一座城，名叫拿撒勒，就住在那里。",
-                ref: "马太福音 2:22-23"
+                ref: "马太福音 2:22-23",
+                verse: "只因听见亚基老接着他父亲希律作了犹太王，就怕往那里去，又在梦中被主指示，便往加利利境内去了，到了一座城，名叫拿撒勒，就住在那里。"
+            },
+            {
+                q: "耶稣降生后在圣殿里，谁受圣灵感动认出他并称颂神？",
+                options: ["施洗约翰", "大祭司亚拿", "西缅", "尼哥底母"],
+                answer: 2,
+                ref: "路加福音 2:25,28",
+                verse: "在耶路撒冷有一个人，名叫西缅；这人又公义又虔诚，盼望以色列的安慰者来到...西缅就用手接过他来，称颂神..."
+            },
+            {
+                q: "在圣殿里除了西缅，还有一位女先知也称谢神并讲论这孩子，她是谁？",
+                options: ["以利沙伯", "马大", "亚拿", "户勒大"],
+                answer: 2,
+                ref: "路加福音 2:36,38",
+                verse: "又有女先知，名叫亚拿...正当那时，她进前来称谢神，将孩子的事对一切盼望耶路撒冷得救赎的人讲说。"
             },
             {
                 q: "耶稣几岁随父母到耶路撒冷去？",
                 options: ["八岁", "十岁", "十二岁", "三十岁"],
                 answer: 2,
-                verse: "当他十二岁的时候，他们按着节期的规矩上去。",
-                ref: "路加福音 2:42"
+                ref: "路加福音 2:42",
+                verse: "当他十二岁的时候，他们按着节期的规矩上去。"
             },
             {
-                q: "耶稣十二岁随父母去耶路撒冷，是过什么节日？",
-                options: ["住棚节", "逾越节", "五旬节", "修殿节"],
-                answer: 1,
-                verse: "每年到逾越节，他父母就上耶路撒冷去。",
-                ref: "路加福音 2:41"
-            },
-            {
-                q: "当约瑟、马利亚走了一天路程才发现耶稣不在，回耶路撒冷找他时，耶稣在做什么？",
-                options: ["在街上讲道", "在客店里等他们", "在殿里坐在教师中间，一面听，一面问", "在圣殿外哭泣"],
+                q: "耶稣随父母去耶路撒冷，是过什么节日？",
+                options: ["五旬节", "住棚节", "逾越节", "修殿节"],
                 answer: 2,
-                verse: "过了三天，就找着了，在殿里，坐在教师中间，一面听，一面问。",
-                ref: "路加福音 2:46"
+                ref: "路加福音 2:41",
+                verse: "每年到逾越节，他父母就上耶路撒冷去。"
             },
             {
-                q: "凡听见耶稣在殿里应对的人，有什么反应？",
-                options: ["觉得他很顽皮", "都希奇他的聪明和他的应对", "认为他不守规矩", "将他赶出圣殿"],
-                answer: 1,
-                verse: "凡听见他的，都希奇他的聪明和他的应对。",
-                ref: "路加福音 2:47"
-            },
-            {
-                q: "当马利亚问耶稣为什么这样对他们时，耶稣怎么回答？",
-                options: ["我迷路了", "我在等你们", "为什么找我呢？岂不知我应当以我父的事为念吗？", "我想留在耶路撒冷"],
+                q: "耶稣在耶路撒冷殿里是怎样勤学好问的？",
+                options: ["独自阅读律法书", "与文士激烈辩论", "坐在教师中间，一面听，一面问", "在街市上教导众人"],
                 answer: 2,
-                verse: "耶稣说：“为什么找我呢？岂不知我应当以我父的事为念吗？（或作：岂不知我应当在我父的家里吗？）”",
-                ref: "路加福音 2:49"
+                ref: "路加福音 2:46",
+                verse: "过了三天，就找着了，看他坐在教师中间，一面听，一面问。"
             },
             {
-                q: "耶稣同父母回到拿撒勒后，对他们的态度如何？",
-                options: ["经常顶撞他们", "并且顺从他们", "再也不理他们", "离家出走"],
+                q: "当约瑟、马利亚回耶路撒冷找耶稣时，耶稣怎么回答他们的？",
+                options: ["我迷路了", "为什么找我呢？岂不知我应当以我父的事为念吗？", "我想留在圣殿里学习", "对不起，我让你们担心了"],
                 answer: 1,
-                verse: "他就同他们下去，回到拿撒勒，并且顺从他们。他母亲把这一切的事都存在心里。",
-                ref: "路加福音 2:51"
+                ref: "路加福音 2:49",
+                verse: "耶稣说：“为什么找我呢？岂不知我应当以我父的事为念吗？（或作：岂不知我应当在我父的家里吗？）”"
             },
             {
-                q: "圣经是怎样评价耶稣的成长的？",
-                options: ["他渐渐长大，十分强健", "他学习了许多手艺", "耶稣的智慧和身量，并神和人喜爱他的心，都一齐增长", "他熟读了所有的律法"],
+                q: "圣经是怎样评价少年耶稣的成长的？",
+                options: ["他精通一切律法", "他的神迹奇事渐渐显多", "耶稣的智慧和身量，并神和人喜爱他的心，都一齐增长", "他很快成为城里最出名的人"],
                 answer: 2,
-                verse: "耶稣的智慧和身量（或作：年纪），并神和人喜爱他的心，都一齐增长。",
-                ref: "路加福音 2:52"
+                ref: "路加福音 2:52",
+                verse: "耶稣的智慧和身量（或作：年纪），并神和人喜爱他的心，都一齐增长。"
             },
             {
-                q: "施洗约翰在旷野传道时，穿什么，吃什么？",
-                options: ["穿细软衣服，吃大鱼大肉", "穿骆驼毛的衣服，吃蝗虫、野蜜", "穿羊皮，吃无酵饼", "穿麻布，吃吗哪"],
+                q: "施洗约翰的父亲是谁？",
+                options: ["约瑟", "撒迦利亚", "西罗亚", "西庇太"],
                 answer: 1,
-                verse: "这约翰身穿骆驼毛的衣服，腰束皮带，吃的是蝗虫、野蜜。",
-                ref: "马太福音 3:4"
+                ref: "路加福音 1:13",
+                verse: "天使对他说：“撒迦利亚，不要害怕，因为你的祈祷已经被听见了。你的妻子以利沙伯要给你生一个儿子，你要给他起名叫约翰。”"
+            },
+            {
+                q: "施洗约翰在旷野穿什么，吃什么？",
+                options: ["穿细麻衣，吃无酵饼", "穿骆驼毛的衣服，吃蝗虫、野蜜", "穿羊皮，吃吗哪", "穿紫袍，吃祭肉"],
+                answer: 1,
+                ref: "马太福音 3:4",
+                verse: "这约翰身穿骆驼毛的衣服，腰束皮带，吃的是蝗虫、野蜜。"
+            },
+            {
+                q: "约翰用水施洗，他说那在他以后来的要用什么施洗？",
+                options: ["用血施洗", "用油施洗", "用真理施洗", "用圣灵与火施洗"],
+                answer: 3,
+                ref: "马太福音 3:11",
+                verse: "我是用水给你们施洗，叫你们悔改。但那在我以后来的，能力比我更大，我就是给他提鞋也不配。他要用圣灵与火给你们施洗。"
             },
             {
                 q: "耶稣在哪里受谁的洗？",
-                options: ["在加利利海受彼得的洗", "在耶路撒冷受祭司的洗", "在约但河受施洗约翰的洗", "在死海受爱色尼人的洗"],
-                answer: 2,
-                verse: "当下，耶稣从加利利来到约但河，见了约翰，要受他的洗。",
-                ref: "马太福音 3:13"
-            },
-            {
-                q: "耶稣受洗时，约翰一开始怎么说？",
-                options: ["你需要悔改", "我当受你的洗，你反倒上我这里来吗？", "你的衣服不洁净", "神还没有指示我"],
+                options: ["在加利利海受彼得的洗", "在约但河里受了约翰的洗", "在毕士大池受大祭司的洗", "在西罗亚池受法利赛人的洗"],
                 answer: 1,
-                verse: "约翰想要拦住他，说：“我当受你的洗，你反倒上我这里来吗？”",
-                ref: "马太福音 3:14"
+                ref: "马可福音 1:9",
+                verse: "那时，耶稣从加利利的拿撒勒来，在约但河里受了约翰的洗。"
             },
             {
-                q: "耶稣对约翰的拦阻是如何回答的？",
-                options: ["我是神的儿子", "你暂且许我，因为我们理当这样尽诸般的义", "照我说的做", "这是天使的吩咐"],
+                q: "耶稣来受洗时，约翰一开始的态度是什么？",
+                options: ["欢喜快乐地为他施洗", "想要拦住他，说：“我当受你的洗”", "拒绝为他施洗", "要求他先认罪"],
                 answer: 1,
-                verse: "耶稣回答说：“你暂且许我，因为我们理当这样尽诸般的义（或作：礼）。”于是约翰许了他。",
-                ref: "马太福音 3:15"
+                ref: "马太福音 3:14",
+                verse: "约翰想要拦住他，说：“我当受你的洗，你反倒上我这里来吗？”"
             },
             {
-                q: "耶稣在受洗后正在做什么，就有圣灵降在他身上？",
-                options: ["正在讲道的时候", "正在水里走的时候", "正祷告的时候", "正在禁食的时候"],
-                answer: 2,
-                verse: "众百姓都受了洗，耶稣也受了洗。正祷告的时候，天就开了，圣灵降临在他身上...",
-                ref: "路加福音 3:21-22"
+                q: "耶稣回答约翰，为什么要受他的洗？",
+                options: ["为了得救", "因为我们理当这样尽诸般的义", "为了向众人显明自己", "因为律法的规定"],
+                answer: 1,
+                ref: "马太福音 3:15",
+                verse: "耶稣回答说：“你暂且许我，因为我们理当这样尽诸般的义（或作：礼）。”于是约翰许了他。"
             },
             {
                 q: "耶稣受洗之后他看见了什么？",
-                options: ["天忽然为他开了，神的灵仿佛鸽子降下", "雷电交加", "天使在水面上行走", "彩虹横跨天空"],
+                options: ["看见天使降临", "看见火从天降", "看见天裂开了，圣灵仿佛鸽子，降在他身上", "看见云彩遮盖了约但河"],
+                answer: 2,
+                ref: "马可福音 1:10",
+                verse: "他从水里一上来，就看见天裂开了，圣灵仿佛鸽子，降在他身上。"
+            },
+            {
+                q: "耶稣受洗之后听见了什么？",
+                options: ["大风的声音", "有声音从天上来说：“你是我的爱子，我喜悦你。”", "众人的欢呼声", "天使的歌唱"],
+                answer: 1,
+                ref: "马可福音 1:11",
+                verse: "又有声音从天上来说：“你是我的爱子，我喜悦你。”"
+            },
+            {
+                q: "根据路加福音，耶稣在受洗后正在做什么，就有圣灵降在祂身上？",
+                options: ["正对众人讲话的时候", "正祷告的时候", "正走上岸的时候", "正禁食的时候"],
+                answer: 1,
+                ref: "路加福音 3:21",
+                verse: "众百姓都受了洗，耶稣也受了洗。正祷告的时候，天就开了，圣灵降临在他身上..."
+            },
+            {
+                q: "圣灵把耶稣催到旷野里去，他在那里受魔鬼试探多少天？",
+                options: ["三天", "七天", "四十天", "一百天"],
+                answer: 2,
+                ref: "马可福音 1:12-13",
+                verse: "圣灵就把耶稣催到旷野里去。他在旷野四十天，受撒但的试探..."
+            },
+            {
+                q: "耶稣在旷野受魔鬼的试探，魔鬼首先用什么试探耶稣的？",
+                options: ["万国的荣华", "跳下殿顶", "变石头为食物", "向他下拜"],
+                answer: 2,
+                ref: "马太福音 4:3",
+                verse: "那试探人的进前来，对他说：“你若是神的儿子，可以吩咐这些石头变成食物。”"
+            },
+            {
+                q: "面对变石头为食物的试探，耶稣怎么回答的？",
+                options: ["我现在不饿", "经上记着说：‘人活着，不是单靠食物，乃是靠神口里所出的一切话。’", "神会赐给我食物", "不可试探主你的神"],
+                answer: 1,
+                ref: "马太福音 4:4",
+                verse: "耶稣却回答说：“经上记着说：‘人活着，不是单靠食物，乃是靠神口里所出的一切话。’”"
+            },
+            {
+                q: "魔鬼第二次带耶稣进了圣城，叫他站在殿顶上，用什么试探他？",
+                options: ["万国的荣华", "跳下殿顶，说神会吩咐使者用手托着他", "变石头为食物", "显个神迹给众人看"],
+                answer: 1,
+                ref: "马太福音 4:5-6",
+                verse: "魔鬼就带他进了圣城，叫他站在殿顶上，对他说：“你若是神的儿子，可以跳下去，因为经上记着说：‘主要为你吩咐他的使者用手托着你，免得你的脚碰在石头上。’”"
+            },
+            {
+                q: "面对跳下殿顶的试探，耶稣怎么回答的？",
+                options: ["经上记着说：‘不可试探主你的神。’", "我不想要试探自己", "时候还没有到", "当拜主你的神"],
                 answer: 0,
-                verse: "耶稣受了洗，随即从水里上来。天忽然为他开了，他就看见神的灵仿佛鸽子降下，落在他身上。",
-                ref: "马太福音 3:16"
+                ref: "马太福音 4:7",
+                verse: "耶稣对他说：“经上又记着说：‘不可试探主你的神。’”"
             },
             {
-                q: "耶稣受洗之后听见了什么声音？",
-                options: ["你当悔改信福音", "这是我的爱子，我所喜悦的", "你要往普天下去传福音", "你是以色列的王"],
-                answer: 1,
-                verse: "忽然有声音从天上来，说：“这是我的爱子，我所喜悦的。”",
-                ref: "马太福音 3:17"
-            },
-            {
-                q: "耶稣被圣灵引到旷野，禁食多久受魔鬼的试探？",
-                options: ["三天三夜", "七天七夜", "四十昼夜", "一年"],
-                answer: 2,
-                verse: "当时，耶稣被圣灵引到旷野，受魔鬼的试探。他禁食四十昼夜，后来就饿了。",
-                ref: "马太福音 4:1-2"
-            },
-            {
-                q: "耶稣在旷野受魔鬼的试探，魔鬼首先叫他把什么变成食物？耶稣怎么回答的？",
-                options: ["水变成酒；人活着不是单靠食物", "石头变成食物；人活着不是单靠食物，乃是靠神口里所出的一切话", "树木变成面包；不可试探主", "沙子变成饼；当拜主你的神"],
-                answer: 1,
-                verse: "那试探人的进前来，对他说：“你若是神的儿子，可以吩咐这些石头变成食物。”耶稣却回答说：“经上记着说：‘人活着，不是单靠食物，乃是靠神口里所出的一切话。’”",
-                ref: "马太福音 4:3-4"
-            },
-            {
-                q: "魔鬼第二次试探耶稣，叫他从殿顶跳下去，耶稣是怎么回答的？",
-                options: ["天使会托住我", "不可试探主你的神", "我不试探神", "神必保护我"],
-                answer: 1,
-                verse: "耶稣对他说：“经上又记着说：‘不可试探主你的神。’”",
-                ref: "马太福音 4:7"
-            },
-            {
-                q: "魔鬼第三次带耶稣上最高的山，用万国的荣华试探他，耶稣是怎么回答的？",
-                options: ["撒但退去吧！当拜主你的神，单要侍奉他。", "我不要世上的荣华", "神已经把万国赐给我了", "你是个说谎的"],
+                q: "魔鬼第三次带耶稣上了一座最高的山，用什么试探耶稣的？",
+                options: ["万国和万国的荣华，只要俯伏拜他", "把石头变成金子", "从山上跳下去", "把天上的火降下来"],
                 answer: 0,
-                verse: "耶稣说：“撒但（撒但就是抵挡的意思，乃魔鬼的别名），退去吧！因为经上记着说：‘当拜主你的神，单要侍奉他。’”",
-                ref: "马太福音 4:10"
+                ref: "马太福音 4:8-9",
+                verse: "魔鬼又带他上了一座最高的山，将世上的万国与万国的荣华都指给他看，对他说：“你若俯伏拜我，我就把这一切都赐给你。”"
             },
             {
-                q: "魔鬼用尽了各样的试探，就怎样了？",
-                options: ["被耶稣捆绑了", "逃进海里", "就暂时离开耶稣", "化作一条蛇"],
-                answer: 2,
-                verse: "魔鬼用尽各样的试探，就暂时离开耶稣。",
-                ref: "路加福音 4:13"
-            },
-            {
-                q: "约翰下监以后，耶稣离开拿撒勒，退到了哪里传福音？",
-                options: ["撒马利亚", "埃及", "加利利的海边，迦百农", "伯大尼"],
-                answer: 2,
-                verse: "耶稣听见约翰下了监，就退到加利利去；后又离开拿撒勒，往迦百农去，就住在那里。那地方靠海...",
-                ref: "马太福音 4:12-13"
-            },
-            {
-                q: "耶稣开始传道的第一句话是怎么说的？",
-                options: ["你们要彼此相爱", "天国近了，你们应当悔改！", "信我的人有永生", "我是世界的光"],
+                q: "面对万国荣华的试探，耶稣怎么回答的？",
+                options: ["万国本是属我的", "撒但，退去吧！因为经上记着说：‘当拜主你的神，单要事奉他。’", "不可试探主", "人活着不是单靠食物"],
                 answer: 1,
-                verse: "从那时候，耶稣就传起道来，说：“天国近了，你们应当悔改！”",
-                ref: "马太福音 4:17"
+                ref: "马太福音 4:10",
+                verse: "耶稣说：“撒但，退去吧！因为经上记着说：‘当拜主你的神，单要事奉他。’”"
             },
             {
-                q: "耶稣在安息日进了拿撒勒的会堂，念了先知以赛亚的预言后，坐下说了什么？",
-                options: ["这预言将来要成就", "你们当听先知的话", "今天这经应验在你们耳中了", "凡有耳的就应当听"],
+                q: "耶稣得胜试探后，开始天国的事工，他首先在哪里宣讲神的话？",
+                options: ["犹太", "撒马利亚", "加利利", "低加波利"],
                 answer: 2,
-                verse: "耶稣对他们说：“今天这经应验在你们耳中了。”",
-                ref: "路加福音 4:21"
+                ref: "马太福音 4:23",
+                verse: "耶稣走遍加利利，在各会堂里教训人，传天国的福音，医治百姓各样的疾病。"
+            },
+            {
+                q: "耶稣开始传道后，是在什么日子进了拿撒勒的会堂？",
+                options: ["安息日", "月朔", "逾越节", "五旬节"],
+                answer: 0,
+                ref: "路加福音 4:16",
+                verse: "耶稣来到拿撒勒，就是他长大的地方。在安息日，照他平常的规矩进了会堂，站起来要念圣经。"
+            },
+            {
+                q: "在拿撒勒的会堂里，耶稣念了哪位先知的预言？",
+                options: ["耶利米", "以赛亚", "但以理", "以西结"],
+                answer: 1,
+                ref: "路加福音 4:17",
+                verse: "有人把先知以赛亚的书交给他，他就打开，找到一处写着说..."
+            },
+            {
+                q: "耶稣在拿撒勒读完以赛亚书后，对众人说的第一句话是什么？",
+                options: ["天国近了", "今天这经应验在你们耳中了", "你们当悔改", "我就是生命的粮"],
+                answer: 1,
+                ref: "路加福音 4:21",
+                verse: "耶稣对他们说：“今天这经应验在你们耳中了。”"
+            },
+            {
+                q: "约翰下监以后，耶稣离开拿撒勒，退到了哪里居住并传福音？",
+                options: ["伯大尼", "耶路撒冷", "迦百农", "伯利恒"],
+                answer: 2,
+                ref: "马太福音 4:12-13",
+                verse: "耶稣听见约翰下了监，就退到加利利去；后又离开拿撒勒，往迦百农去，就住在那里。"
+            },
+            {
+                q: "根据马太福音，耶稣传道的第一句话是怎么说的？",
+                options: ["信子的人有永生", "天国近了，你们应当悔改！", "我是世界的光", "你们要彼此相爱"],
+                answer: 1,
+                ref: "马太福音 4:17",
+                verse: "从那时候，耶稣就传起道来，说：“天国近了，你们应当悔改！”"
             }
         ];
 
+        // === 状态变量 ===
         let currentQuestions = [];
         let currentIndex = 0;
         let score = 0;
-        let mistakes = new Set(JSON.parse(localStorage.getItem('jesusQuizMistakes') || '[]'));
-        let isReviewMode = false;
-        let hasAnswered = false;
+        let mistakes = JSON.parse(localStorage.getItem('jesusQuizMistakes') || '[]');
+        let isMistakeMode = false;
+        
+        // 计时器变量
+        let timerInterval;
+        let elapsedSeconds = 0;
 
-        let timerInterval = null;
-        let timeElapsed = 0;
-        let startTime = 0;
+        // === 初始化页面 ===
+        window.onload = function() {
+            updateHomeBtn();
+        };
 
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const s = (seconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        const appDiv = document.getElementById('app');
-
-        function saveMistakes() {
-            localStorage.setItem('jesusQuizMistakes', JSON.stringify(Array.from(mistakes)));
-        }
-
-        function renderHome() {
-            clearInterval(timerInterval);
-            const mistakesCount = mistakes.size;
-            
-            let html = `
-                <div class="flex-grow flex flex-col items-center justify-center p-8 fade-in">
-                    <div class="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                        <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                    </div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight text-center">耶稣生平知多少</h1>
-                    <p class="text-gray-500 mb-10 text-center">从降生到开始传道事工<br>共 50 道精选题目</p>
-                    
-                    <button onclick="startQuiz(false)" class="w-full bg-blue-600 text-white font-semibold py-4 px-6 rounded-2xl shadow-sm hover:bg-blue-700 active:scale-95 transition-all text-lg mb-4">
-                        开始进入答题
-                    </button>
-            `;
-
-            if (mistakesCount > 0) {
-                html += `
-                    <button onclick="startQuiz(true)" class="w-full bg-red-50 text-red-600 font-semibold py-4 px-6 rounded-2xl border border-red-100 hover:bg-red-100 active:scale-95 transition-all text-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        错题订正 (${mistakesCount})
-                    </button>
-                `;
+        function updateHomeBtn() {
+            const mistakesBtn = document.getElementById('mistakesBtn');
+            if (mistakes.length > 0) {
+                mistakesBtn.innerText = `错题订正 (${mistakes.length})`;
+                mistakesBtn.classList.remove('hidden');
+            } else {
+                mistakesBtn.classList.add('hidden');
             }
-
-            html += `</div>`;
-            appDiv.innerHTML = html;
         }
 
-        function startQuiz(review = false) {
-            isReviewMode = review;
-            score = 0;
-            currentIndex = 0;
-            hasAnswered = false;
-
-            timeElapsed = 0;
-            startTime = Date.now();
+        // === 计时器逻辑 ===
+        function startTimer() {
+            elapsedSeconds = 0;
+            updateTimerDisplay();
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                timeElapsed = Math.floor((Date.now() - startTime) / 1000);
-                const timerEl = document.getElementById('quizTimer');
-                if (timerEl) {
-                    timerEl.innerText = formatTime(timeElapsed);
-                }
+                elapsedSeconds++;
+                updateTimerDisplay();
             }, 1000);
+        }
 
-            if (isReviewMode) {
-                // Get question objects based on mistake indices
-                currentQuestions = Array.from(mistakes).map(index => ({ ...questions[index], originalIndex: index }));
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+        }
+
+        // === 核心流程控制 ===
+        function startQuiz(mistakeMode) {
+            isMistakeMode = mistakeMode;
+            if (mistakeMode) {
+                currentQuestions = allQuestions.filter(q => mistakes.includes(q.q));
+                if (currentQuestions.length === 0) return;
             } else {
-                currentQuestions = questions.map((q, i) => ({ ...q, originalIndex: i }));
+                currentQuestions = [...allQuestions];
             }
-
+            
+            currentIndex = 0;
+            score = 0;
+            
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('quizScreen').classList.add('flex');
+            
+            startTimer();
             renderQuestion();
         }
 
         function renderQuestion() {
-            if (currentIndex >= currentQuestions.length) {
-                clearInterval(timerInterval);
-                renderResult();
-                return;
-            }
-
             const q = currentQuestions[currentIndex];
-            const progress = ((currentIndex) / currentQuestions.length) * 100;
-            const modeText = isReviewMode ? '错题订正' : '答题中';
-
-            let html = `
-                <!-- Header / Progress -->
-                <div class="px-6 pt-6 pb-4 bg-white ios-shadow z-10 flex flex-col sticky top-0">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-xs font-semibold tracking-wider text-gray-400 uppercase">${modeText}</span>
-                        <div class="flex items-center space-x-3">
-                            <span id="quizTimer" class="text-sm font-mono font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">${formatTime(timeElapsed)}</span>
-                            <span class="text-sm font-medium text-gray-900">${currentIndex + 1} / ${currentQuestions.length}</span>
-                        </div>
-                    </div>
-                    <div class="w-full bg-gray-100 rounded-full h-1.5">
-                        <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300 ease-out" style="width: ${progress}%"></div>
-                    </div>
-                </div>
-
-                <!-- Question Area -->
-                <div class="flex-grow overflow-y-auto px-6 py-6 pb-32 fade-in" id="scrollArea">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-8 leading-snug">${q.q}</h2>
-                    
-                    <div class="space-y-3" id="optionsContainer">
-            `;
-
+            const progress = ((currentIndex + 1) / currentQuestions.length) * 100;
+            
+            document.getElementById('progressText').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
             q.options.forEach((opt, idx) => {
-                html += `
-                        <button onclick="handleAnswer(${idx})" id="opt-${idx}" class="option-btn w-full text-left p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm font-medium text-gray-700 hover:border-gray-200 transition-colors">
-                            <span class="inline-block w-6 text-gray-400">${String.fromCharCode(65 + idx)}.</span> ${opt}
-                        </button>
-                `;
+                const btn = document.createElement('button');
+                btn.id = `opt-${idx}`;
+                btn.className = "option-btn w-full text-left p-6 rounded-2xl border-2 border-transparent bg-white shadow-sm font-medium text-gray-800 hover:border-gray-200 transition-colors text-xl sm:text-2xl";
+                btn.onclick = () => handleAnswer(idx);
+                
+                const span = document.createElement('span');
+                span.className = "inline-block w-10 text-gray-400 font-bold";
+                span.innerText = `${String.fromCharCode(65 + idx)}.`;
+                
+                const textNode = document.createTextNode(` ${opt}`);
+                
+                btn.appendChild(span);
+                btn.appendChild(textNode);
+                optionsContainer.appendChild(btn);
             });
-
-            html += `
-                    </div>
-                    
-                    <!-- Feedback Area (Hidden initially) -->
-                    <div id="feedbackBox" class="hidden mt-8 slide-up">
-                        <div id="feedbackBanner" class="p-4 rounded-2xl mb-4 font-semibold text-center flex items-center justify-center">
-                            <!-- Injected by JS -->
-                        </div>
-                        <div class="bg-blue-50/50 rounded-2xl p-5 border border-blue-100">
-                            <p class="text-xs font-bold text-blue-600 mb-1">【${q.ref}】</p>
-                            <p class="text-sm text-gray-800 leading-relaxed">${q.verse}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bottom Action Area -->
-                <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#F2F2F7] via-[#F2F2F7] to-transparent z-10 pointer-events-none">
-                    <button id="nextBtn" onclick="nextQuestion()" class="w-full bg-gray-900 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:bg-black active:scale-95 transition-all text-lg opacity-0 translate-y-4 pointer-events-auto hidden">
-                        ${currentIndex === currentQuestions.length - 1 ? '查看结果' : '下一题'}
-                    </button>
-                </div>
-            `;
-
-            appDiv.innerHTML = html;
-            hasAnswered = false;
+            
+            // 隐藏反馈区和下一题按钮
+            document.getElementById('feedbackBox').classList.add('hidden');
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            nextBtn.innerText = currentIndex === currentQuestions.length - 1 ? '查看结果' : '下一题';
+            
+            // 滚动回顶部
+            document.getElementById('questionArea').scrollTop = 0;
         }
 
         function handleAnswer(selectedIndex) {
-            if (hasAnswered) return;
-            hasAnswered = true;
-
             const q = currentQuestions[currentIndex];
-            const correctIndex = q.answer;
-            const originalId = q.originalIndex;
-            const isCorrect = selectedIndex === correctIndex;
-
+            const isCorrect = selectedIndex === q.answer;
+            const options = document.querySelectorAll('.option-btn');
+            
+            // 禁用所有选项
+            options.forEach((btn, idx) => {
+                btn.classList.add('option-disabled');
+                if (idx === q.answer) {
+                    btn.classList.add('option-correct');
+                } else if (idx === selectedIndex && !isCorrect) {
+                    btn.classList.add('option-wrong');
+                }
+            });
+            
+            // 记录错题或移除错题
             if (isCorrect) {
                 score++;
-                if (isReviewMode) {
-                    mistakes.delete(originalId); // Correct in review -> remove from mistakes
-                } else {
-                    mistakes.delete(originalId); // Just in case they got it right in normal mode after having it in mistakes
+                if (isMistakeMode) {
+                    mistakes = mistakes.filter(mistake => mistake !== q.q);
+                    saveMistakes();
                 }
             } else {
-                mistakes.add(originalId); // Wrong -> add to mistakes
-            }
-            saveMistakes();
-
-            // Styling options
-            for (let i = 0; i < 4; i++) {
-                const btn = document.getElementById(`opt-${i}`);
-                btn.classList.remove('bg-white', 'shadow-sm', 'hover:border-gray-200');
-                btn.disabled = true;
-
-                if (i === correctIndex) {
-                    btn.classList.add('bg-green-50', 'border-green-500', 'text-green-800');
-                } else if (i === selectedIndex && !isCorrect) {
-                    btn.classList.add('bg-red-50', 'border-red-400', 'text-red-700');
-                } else {
-                    btn.classList.add('opacity-50');
+                if (!mistakes.includes(q.q)) {
+                    mistakes.push(q.q);
+                    saveMistakes();
                 }
             }
-
-            // Show feedback
+            
+            // 显示反馈
             const feedbackBox = document.getElementById('feedbackBox');
             const feedbackBanner = document.getElementById('feedbackBanner');
             
             if (isCorrect) {
-                feedbackBanner.className = 'p-4 rounded-2xl mb-4 font-semibold text-center flex items-center justify-center bg-green-100 text-green-700';
-                feedbackBanner.innerHTML = `<svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 回答正确`;
+                feedbackBanner.className = "p-4 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-xl bg-green-100 text-green-700";
+                feedbackBanner.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> 回答正确`;
             } else {
-                feedbackBanner.className = 'p-4 rounded-2xl mb-4 font-semibold text-center flex items-center justify-center bg-red-100 text-red-700';
-                feedbackBanner.innerHTML = `<svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> 回答错误，正确答案是 ${String.fromCharCode(65 + correctIndex)}`;
+                feedbackBanner.className = "p-4 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-xl bg-red-100 text-red-700";
+                feedbackBanner.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg> 回答错误，正确答案是 ${String.fromCharCode(65 + q.answer)}`;
             }
-
+            
+            document.getElementById('feedbackRef').innerText = `【${q.ref}】`;
+            document.getElementById('feedbackVerse').innerText = q.verse;
+            
             feedbackBox.classList.remove('hidden');
-
-            // Show Next Button
+            
+            // 显示下一题按钮
             const nextBtn = document.getElementById('nextBtn');
-            nextBtn.classList.remove('hidden');
-            // Small timeout to allow display:block to apply before animating opacity
+            nextBtn.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+            
+            // 自动滚动到底部以便看清反馈和按钮 (平滑滚动)
             setTimeout(() => {
-                nextBtn.style.opacity = '1';
-                nextBtn.style.transform = 'translateY(0)';
-            }, 50);
-
-            // Scroll to bottom
-            setTimeout(() => {
-                const scrollArea = document.getElementById('scrollArea');
-                scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+                document.getElementById('questionArea').scrollTo({
+                    top: document.getElementById('questionArea').scrollHeight,
+                    behavior: 'smooth'
+                });
             }, 100);
         }
 
         function nextQuestion() {
-            currentIndex++;
-            renderQuestion();
-        }
-
-        function renderResult() {
-            let message = "";
-            let emoji = "";
-            let percentage = Math.round((score / currentQuestions.length) * 100);
-
-            if (isReviewMode) {
-                if (mistakes.size === 0) {
-                    message = "太棒了！所有的错题都已清空。";
-                    emoji = "🎉";
-                } else {
-                    message = `还有 ${mistakes.size} 道错题，继续加油！`;
-                    emoji = "💪";
-                }
+            if (currentIndex < currentQuestions.length - 1) {
+                currentIndex++;
+                renderQuestion();
             } else {
-                if (percentage === 100) {
-                    message = "完美满分！您对圣经非常熟悉。";
-                    emoji = "🏆";
-                } else if (percentage >= 80) {
-                    message = "非常出色！您对耶稣的生平很了解。";
-                    emoji = "🌟";
-                } else if (percentage >= 60) {
-                    message = "不错哦，继续多多查考圣经。";
-                    emoji = "📖";
-                } else {
-                    message = "还需要更多熟悉圣经，借着错题复习吧！";
-                    emoji = "🌱";
-                }
+                showResult();
             }
-
-            const html = `
-                <div class="flex-grow flex flex-col items-center justify-center p-8 fade-in">
-                    <div class="text-6xl mb-6">${emoji}</div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">答题结束</h1>
-                    
-                    <div class="bg-white rounded-3xl shadow-sm p-6 w-full mt-6 mb-8 border border-gray-100/80 ios-shadow">
-                        <div class="flex justify-around items-center">
-                            <div class="text-center">
-                                <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">您的成绩</p>
-                                <p class="text-4xl font-black text-blue-600">${score}<span class="text-xl text-gray-400 font-medium">/${currentQuestions.length}</span></p>
-                            </div>
-                            <div class="w-px h-12 bg-gray-200 rounded-full"></div>
-                            <div class="text-center">
-                                <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">用时</p>
-                                <p class="text-3xl font-black text-gray-700 font-mono mt-1">${formatTime(timeElapsed)}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <p class="text-gray-700 text-center mb-12 text-lg px-4">${message}</p>
-                    
-                    <button onclick="renderHome()" class="w-full bg-gray-900 text-white font-semibold py-4 px-6 rounded-2xl shadow-md hover:bg-black active:scale-95 transition-all text-lg">
-                        返回首页
-                    </button>
-                </div>
-            `;
-            appDiv.innerHTML = html;
         }
 
-        // Initialize App
-        window.onload = () => {
-            renderHome();
-        };
+        function showResult() {
+            stopTimer();
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('flex');
+            
+            const resultScreen = document.getElementById('resultScreen');
+            resultScreen.classList.remove('hidden');
+            resultScreen.classList.add('flex');
+            
+            document.getElementById('scoreDisplay').innerText = `${score} / ${currentQuestions.length}`;
+            
+            const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timeDisplay').innerText = `${mins}:${secs}`;
+            
+            const resultDesc = document.getElementById('resultDesc');
+            const resultIcon = document.getElementById('resultIcon');
+            
+            if (score === currentQuestions.length) {
+                resultDesc.innerText = "太棒了！全答对了！";
+                resultIcon.className = "w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6";
+                resultIcon.innerHTML = `<svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+            } else {
+                resultDesc.innerText = `还需要继续努力熟悉经文哦`;
+                resultIcon.className = "w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6";
+                resultIcon.innerHTML = `<svg class="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            }
+        }
+
+        function returnToHome() {
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('flex');
+            document.getElementById('homeScreen').classList.remove('hidden');
+            updateHomeBtn();
+        }
+
+        function saveMistakes() {
+            localStorage.setItem('jesusQuizMistakes', JSON.stringify(mistakes));
+        }
     </script>
 </body>
 </html>
