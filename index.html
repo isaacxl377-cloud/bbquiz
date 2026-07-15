@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>耶稣生平互动答题系统</title>
+    <title>耶稣生平及每日读经答题系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -31,11 +31,13 @@
             background-color: #d1fae5 !important;
             border-color: #10b981 !important;
             color: #065f46 !important;
+            font-weight: 700;
         }
         .option-wrong {
             background-color: #fee2e2 !important;
             border-color: #ef4444 !important;
             color: #991b1b !important;
+            font-weight: 700;
         }
         .option-disabled {
             opacity: 0.6;
@@ -53,27 +55,37 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 flex justify-center overflow-hidden h-screen" style="height: 100dvh;">
+<body class="bg-gray-900 flex justify-center overflow-hidden" style="height: 100dvh;">
 
     <!-- 移动端主容器 (限制最大宽度并充满动态屏幕高度) -->
     <div id="app" class="w-full max-w-md h-full bg-[#F2F2F7] flex flex-col relative shadow-2xl overflow-hidden">
         
         <!-- ================= 1. 首页 (Home Screen) ================= -->
-        <div id="homeScreen" class="flex flex-col items-center justify-center h-full p-8 w-full">
-            <div class="w-24 h-24 bg-blue-600 rounded-[2rem] shadow-lg flex items-center justify-center mb-8">
+        <div id="homeScreen" class="flex flex-col items-center justify-center h-full p-6 w-full">
+            <div class="w-24 h-24 bg-blue-600 rounded-[2rem] shadow-lg flex items-center justify-center mb-6">
                 <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
             </div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-2 text-center">耶稣生平答题</h1>
-            <p class="text-lg text-gray-500 mb-10 text-center">基于中文圣经和合本</p>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2 text-center">互动答题</h1>
+            <p class="text-xl text-gray-500 mb-10 text-center">基于中文圣经和合本</p>
             
-            <button onclick="startQuiz(false)" class="w-full bg-blue-600 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-blue-700 active:scale-95 transition-all text-xl mb-4">
-                开始全部答题 (50题)
-            </button>
-            
-            <!-- 错题按钮，如果有错题则动态显示 -->
-            <button id="mistakesBtn" onclick="startQuiz(true)" class="hidden w-full bg-red-100 text-red-600 font-bold py-5 px-6 rounded-2xl shadow-sm hover:bg-red-200 active:scale-95 transition-all text-xl">
-                错题订正 (0)
-            </button>
+            <div class="w-full space-y-4">
+                <!-- 原主测试按钮 -->
+                <button onclick="startQuiz('main')" class="w-full bg-blue-600 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-blue-700 active:scale-95 transition-all text-2xl flex items-center justify-center">
+                    <svg class="w-7 h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    耶稣生平全测
+                </button>
+
+                <!-- 每日读经答题按钮 (新增) -->
+                <button onclick="startQuiz('daily')" class="w-full bg-emerald-600 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-emerald-700 active:scale-95 transition-all text-2xl flex items-center justify-center">
+                    <svg class="w-7 h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    每日读经答题
+                </button>
+                
+                <!-- 错题按钮，如果有错题则动态显示 -->
+                <button id="mistakesBtn" onclick="startQuiz('mistake')" class="hidden w-full bg-red-100 text-red-600 font-bold py-5 px-6 rounded-2xl shadow-sm hover:bg-red-200 active:scale-95 transition-all text-2xl flex items-center justify-center">
+                    错题订正 (0)
+                </button>
+            </div>
         </div>
 
         <!-- ================= 2. 答题页面 (Quiz Screen) ================= -->
@@ -81,8 +93,8 @@
             <!-- 顶部进度与计时栏 -->
             <div class="bg-white pt-6 pb-4 px-6 rounded-b-[2rem] shadow-sm z-20 shrink-0">
                 <div class="flex justify-between items-center mb-3">
-                    <span class="text-gray-500 font-bold text-lg tracking-wider" id="progressText">1 / 50</span>
-                    <span class="text-blue-600 font-bold text-lg font-mono bg-blue-50 px-3 py-1 rounded-lg" id="timerDisplay">00:00</span>
+                    <span class="text-gray-500 font-bold text-xl tracking-wider" id="progressText">1 / 50</span>
+                    <span class="text-blue-600 font-bold text-xl font-mono bg-blue-50 px-3 py-1 rounded-lg" id="timerDisplay">00:00</span>
                 </div>
                 <div class="w-full bg-gray-100 rounded-full h-2">
                     <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out" style="width: 2%"></div>
@@ -91,22 +103,22 @@
 
             <!-- 问题与选项滚动区 -->
             <div class="flex-grow overflow-y-auto px-6 py-6 pb-32 no-scrollbar" id="questionArea">
-                <h2 id="questionText" class="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 leading-snug tracking-wide">
+                <h2 id="questionText" class="text-3xl font-bold text-gray-900 mb-8 leading-snug tracking-wide">
                     <!-- 问题内容注入 -->
                 </h2>
                 
-                <div class="space-y-4" id="optionsContainer">
+                <div class="space-y-5" id="optionsContainer">
                     <!-- 选项注入 -->
                 </div>
                 
                 <!-- 反馈区域 (初始隐藏) -->
                 <div id="feedbackBox" class="hidden mt-8 slide-up">
-                    <div id="feedbackBanner" class="p-4 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-xl">
+                    <div id="feedbackBanner" class="p-5 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-2xl">
                         <!-- 结果标志注入 -->
                     </div>
-                    <div class="bg-blue-50/70 rounded-2xl p-5 border-2 border-blue-100">
-                        <p id="feedbackRef" class="text-base font-bold text-blue-600 mb-2">【经文出处】</p>
-                        <p id="feedbackVerse" class="text-lg text-gray-800 leading-relaxed font-medium">
+                    <div class="bg-blue-50/80 rounded-2xl p-6 border-2 border-blue-100">
+                        <p id="feedbackRef" class="text-lg font-bold text-blue-600 mb-3">【经文出处】</p>
+                        <p id="feedbackVerse" class="text-2xl text-gray-800 leading-relaxed font-medium">
                             <!-- 经文内容注入 -->
                         </p>
                     </div>
@@ -115,7 +127,7 @@
 
             <!-- 绝对定位的底部操作区 (不会被遮挡) -->
             <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#F2F2F7] via-[#F2F2F7] to-transparent z-30">
-                <button id="nextBtn" onclick="nextQuestion()" class="w-full bg-gray-900 text-white font-bold py-5 px-6 rounded-2xl shadow-xl hover:bg-black active:scale-95 transition-all text-xl opacity-0 translate-y-4 pointer-events-none">
+                <button id="nextBtn" onclick="nextQuestion()" class="w-full bg-gray-900 text-white font-bold py-5 px-6 rounded-2xl shadow-xl hover:bg-black active:scale-95 transition-all text-2xl opacity-0 translate-y-4 pointer-events-none">
                     下一题
                 </button>
             </div>
@@ -128,20 +140,20 @@
                     <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">完成答题！</h2>
-                <p class="text-gray-500 mb-8 text-lg" id="resultDesc">本次练习情况如下</p>
+                <p class="text-gray-500 mb-8 text-xl" id="resultDesc">本次练习情况如下</p>
                 
                 <div class="flex w-full space-x-4 mb-8">
                     <div class="flex-1 bg-blue-50 p-4 rounded-2xl">
-                        <p class="text-sm text-blue-600 font-bold mb-1">得分</p>
-                        <p class="text-3xl font-bold text-gray-900" id="scoreDisplay">0</p>
+                        <p class="text-base text-blue-600 font-bold mb-1">得分</p>
+                        <p class="text-4xl font-bold text-gray-900" id="scoreDisplay">0</p>
                     </div>
                     <div class="flex-1 bg-orange-50 p-4 rounded-2xl">
-                        <p class="text-sm text-orange-600 font-bold mb-1">用时</p>
-                        <p class="text-3xl font-bold text-gray-900" id="timeDisplay">00:00</p>
+                        <p class="text-base text-orange-600 font-bold mb-1">用时</p>
+                        <p class="text-4xl font-bold text-gray-900" id="timeDisplay">00:00</p>
                     </div>
                 </div>
 
-                <button onclick="returnToHome()" class="w-full bg-gray-900 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-black active:scale-95 transition-all text-xl mb-4">
+                <button onclick="returnToHome()" class="w-full bg-gray-900 text-white font-bold py-5 px-6 rounded-2xl shadow-md hover:bg-black active:scale-95 transition-all text-2xl mb-4">
                     返回首页
                 </button>
             </div>
@@ -149,8 +161,9 @@
     </div>
 
     <script>
-        // === 题目数据 (完整 50 题) ===
+        // === 题目数据 (主测：耶稣生平 60 题) ===
         const allQuestions = [
+            // 原有的 50 道题
             {
                 q: "耶稣肉身的父母是谁？他们住在哪里？",
                 options: ["亚伯拉罕和撒拉；耶路撒冷", "约瑟和马利亚；拿撒勒", "撒迦利亚和以利沙伯；伯利恒", "大卫和拔示巴；拿撒勒"],
@@ -226,7 +239,7 @@
                 options: ["提庇留", "奥古斯都", "尼禄", "革老丢"],
                 answer: 1,
                 ref: "路加福音 2:1",
-                verse: "当那些日子，该撒亚古士督有旨意下来，叫天下人民都报名上册。"
+                verse: "当那些日子，该撒亚古士督（奥古斯都）有旨意下来，叫天下人民都报名上册。"
             },
             {
                 q: "耶稣出生时，是谁负责人口普查的？",
@@ -495,11 +508,507 @@
                 verse: "耶稣听见约翰下了监，就退到加利利去；后又离开拿撒勒，往迦百农去，就住在那里。"
             },
             {
-                q: "根据马太福音，耶稣传道的第一句话是怎么说的？",
+                q: "耶稣传道的第一句话是怎么说的？",
                 options: ["信子的人有永生", "天国近了，你们应当悔改！", "我是世界的光", "你们要彼此相爱"],
                 answer: 1,
                 ref: "马太福音 4:17",
                 verse: "从那时候，耶稣就传起道来，说：“天国近了，你们应当悔改！”"
+            },
+            
+            // ================= 新增：选召门徒的10道题 =================
+            {
+                q: "耶稣在加利利海边行走，看见哪弟兄二人撒网打鱼？",
+                options: ["雅各和约翰", "西门（彼得）和安得烈", "腓力和拿但业", "马太和多马"],
+                answer: 1,
+                ref: "马太福音 4:18",
+                verse: "耶稣在加利利海边行走，看见弟兄二人，就是那称呼彼得的西门和他兄弟安得烈，在海里撒网；他们本是打鱼的。"
+            },
+            {
+                q: "耶稣对西门和安得烈说了什么，呼召他们跟从他？",
+                options: ["你们要撇下一切来跟从我。", "来跟从我，我要叫你们得人如得鱼一样。", "天国近了，你们应当悔改！", "我就是道路、真理、生命。"],
+                answer: 1,
+                ref: "马太福音 4:19",
+                verse: "耶稣对他们说：“来跟从我，我要叫你们得人如得鱼一样。”"
+            },
+            {
+                q: "耶稣往前走，又看见西庇太的两个儿子，他们是谁？当时在做什么？",
+                options: ["雅各和约翰；同父亲在船上补网", "腓力和安得烈；在岸边洗网", "雅各和犹大；在海里撒网", "拿但业和多马；在树下休息"],
+                answer: 0,
+                ref: "马太福音 4:21",
+                verse: "从那里往前走，又看见弟兄二人，就是西庇太的儿子雅各和他兄弟约翰，同他们的父亲西庇太在船上补网，耶稣就呼召他们。"
+            },
+            {
+                q: "耶稣呼召腓力时，腓力去找了谁，告诉他遇见了摩西和众先知所写的那一位？",
+                options: ["彼得", "安得烈", "拿但业", "马太"],
+                answer: 2,
+                ref: "约翰福音 1:45",
+                verse: "腓力找着拿但业，对他说：“摩西在律法上所写的和众先知所记的那一位，我们遇见了，就是约瑟的儿子拿撒勒人耶稣。”"
+            },
+            {
+                q: "拿但业听见耶稣出自拿撒勒，说了什么？",
+                options: ["拿撒勒人也是神的子民吗？", "拿撒勒还能出什么好的吗？", "那真是以色列的王！", "我必须亲自去看看。"],
+                answer: 1,
+                ref: "约翰福音 1:46",
+                verse: "拿但业对他说：“拿撒勒还能出什么好的吗？”腓力说：“你来看！”"
+            },
+            {
+                q: "耶稣看见拿但业，怎样评价他？",
+                options: ["看哪，这是个有信心的人。", "看哪，这是个真以色列人，他心里是没有诡诈的。", "你的罪赦了。", "你将要看见更大的事。"],
+                answer: 1,
+                ref: "约翰福音 1:47",
+                verse: "耶稣看见拿但业来，就指着他说：“看哪，这是个真以色列人，他心里是没有诡诈的。”"
+            },
+            {
+                q: "耶稣在迦百农经过税关时，看见谁坐在那里，就呼召他跟从？",
+                options: ["撒该", "尼哥底母", "马太", "巴底买"],
+                answer: 2,
+                ref: "马太福音 9:9",
+                verse: "耶稣从那里往前走，看见一个人名叫马太，坐在税关上，就对他说：“你跟从我来。”他就起来跟从了耶稣。"
+            },
+            {
+                q: "法利赛人看见耶稣和税吏并罪人一同吃饭，耶稣怎样回答他们？",
+                options: ["神爱世人，甚至将他的独生子赐给他们。", "我喜爱怜恤，不喜爱祭祀。", "康健的人用不着医生，有病的人才用得着。", "你们不要论断人，免得你们被论断。"],
+                answer: 2,
+                ref: "马太福音 9:12",
+                verse: "耶稣听见，就说：“康健的人用不着医生，有病的人才用得着。”"
+            },
+            {
+                q: "耶稣设立十二个门徒，给他们什么权柄？",
+                options: ["赶出污鬼，并医治各样的病症。", "坐在十二个宝座上审判以色列人。", "吩咐火从天上降下来。", "能行水面并使风浪平静。"],
+                answer: 0,
+                ref: "马太福音 10:1",
+                verse: "耶稣叫了十二个门徒来，给他们权柄，能赶出污鬼，并医治各样的病症。"
+            },
+            {
+                q: "在十二使徒中，后来出卖耶稣的门徒是谁？",
+                options: ["奋锐党的西门", "多马", "达太", "加略人犹大"],
+                answer: 3,
+                ref: "马太福音 10:4",
+                verse: "奋锐党的西门，还有卖耶稣的加略人犹大。"
+            }
+        ];
+
+        // === 题目数据 (每日读经答题：路加福音 20 章) ===
+        const dailyQuestions = [
+            {
+                q: "谁到耶稣那里，质问他凭什么权柄作这些事？",
+                options: ["法利赛人和撒都该人", "祭司长、文士并长老", "希律的党徒和巡抚", "税吏和罪人"],
+                answer: 1,
+                ref: "路加福音 20:1-2",
+                verse: "有一天，耶稣在殿里教训百姓，传福音的时候，祭司长和文士并长老上前来，问他说..."
+            },
+            {
+                q: "他们问耶稣什么问题？",
+                options: ["你为什么要医治病人？", "你仗着什么权柄作这些事？给你这权柄的是谁呢？", "我们可以纳税给该撒吗？", "人死后还有复活吗？"],
+                answer: 1,
+                ref: "路加福音 20:2",
+                verse: "问他说：“你告诉我们，你仗着什么权柄作这些事？给你这权柄的是谁呢？”"
+            },
+            {
+                q: "耶稣回答他们之前，先反问了他们什么问题？",
+                options: ["你们为什么试探我？", "你们没有念过经上的话吗？", "约翰的洗礼是从天上来的，是从人间来的呢？", "谁是你们的父？"],
+                answer: 2,
+                ref: "路加福音 20:3-4",
+                verse: "耶稣回答说：“我也要问你们一句话，你们且告诉我。约翰的洗礼是从天上来的？是从人间来的呢？”"
+            },
+            {
+                q: "宗教领袖彼此商议后，有哪两种回答都不敢说？",
+                options: ["不敢说是神给的，也不敢说是人给的", "不敢说“从天上来”，也不敢说“从人间来”", "不敢说是先知，也不敢说是骗子", "不敢说可以，也不敢说不可以"],
+                answer: 1,
+                ref: "路加福音 20:5-6",
+                verse: "他们彼此商议说：“我们若说‘从天上来’...若说‘从人间来’...”"
+            },
+            {
+                q: "如果他们回答约翰的洗礼是从天上来的，耶稣说他们会面临什么反问？",
+                options: ["这样，你们为什么不信他呢？", "你们为什么不悔改呢？", "你们为什么还来问我呢？", "那你们就是亵渎圣灵了。"],
+                answer: 0,
+                ref: "路加福音 20:5",
+                verse: "他们彼此商议说：“我们若说‘从天上来’，他必说：‘这样，你们为什么不信他呢？’”"
+            },
+            {
+                q: "如果他们回答约翰的洗礼是从人间来的，会有什么后果？",
+                options: ["罗马兵丁会逮捕他们", "耶稣会责备他们瞎眼", "百姓都要用石头打死他们，因为百姓信约翰是先知。", "他们会被赶出会堂。"],
+                answer: 2,
+                ref: "路加福音 20:6",
+                verse: "“若说‘从人间来’，百姓都要用石头打死我们，因为他们信约翰是先知。”"
+            },
+            {
+                q: "宗教领袖最后怎样回答耶稣？",
+                options: ["这是从天上来的。", "这是从人间来的。", "不知道是从哪里来的。", "我们不愿回答你。"],
+                answer: 2,
+                ref: "路加福音 20:7",
+                verse: "于是回答说：“不知道是从哪里来的。”"
+            },
+            {
+                q: "耶稣因此怎样回答他们？",
+                options: ["你们这假冒为善的人哪！", "我也不告诉你们，我仗着什么权柄作这些事。", "你们的罪已经定了。", "瞎子领瞎子，都要掉在坑里。"],
+                answer: 1,
+                ref: "路加福音 20:8",
+                verse: "耶稣说：“我也不告诉你们，我仗着什么权柄作这些事。”"
+            },
+            {
+                q: "耶稣接着设了什么比喻？",
+                options: ["撒种的比喻。", "浪子回头的比喻。", "葡萄园园户的比喻。", "好撒玛利亚人的比喻。"],
+                answer: 2,
+                ref: "路加福音 20:9",
+                verse: "耶稣就设比喻对百姓说：“有人栽了一个葡萄园...”"
+            },
+            {
+                q: "葡萄园主人把葡萄园租给了谁？",
+                options: ["朋友。", "罗马人。", "园户。", "祭司长。"],
+                answer: 2,
+                ref: "路加福音 20:9",
+                verse: "“有人栽了一个葡萄园，租给园户...”"
+            },
+            {
+                q: "主人离开了多久？",
+                options: ["三天。", "往外国去住了许久。", "直到收割的时候。", "一年。"],
+                answer: 1,
+                ref: "路加福音 20:9",
+                verse: "“...就往外国去住了许久。”"
+            },
+            {
+                q: "到了时候，主人先打发谁去见园户？",
+                options: ["他的儿子。", "一群兵丁。", "一个仆人。", "当地的官长。"],
+                answer: 2,
+                ref: "路加福音 20:10",
+                verse: "到了时候，打发一个仆人到园户那里去，叫他们把园中当纳的果子交给他..."
+            },
+            {
+                q: "园户怎样对待第一个仆人？",
+                options: ["热情款待他。", "把果子交给他。", "杀了他。", "打了他，叫他空手回去。"],
+                answer: 3,
+                ref: "路加福音 20:10",
+                verse: "园户竟打了他，叫他空手回去。"
+            },
+            {
+                q: "主人第二次打发仆人去，园户怎样对待他？",
+                options: ["又打了他，并且凌辱他，叫他空手回去。", "把他杀了。", "把他关在监里。", "交出了果子。"],
+                answer: 0,
+                ref: "路加福音 20:11",
+                verse: "又打发一个仆人去，他们也打了他，并且凌辱他，叫他空手回去。"
+            },
+            {
+                q: "主人第三次打发仆人去，园户怎样对待他？",
+                options: ["叫他空手回去。", "又打伤了他，把他推出去了。", "用石头打死他。", "将他钉十字架。"],
+                answer: 1,
+                ref: "路加福音 20:12",
+                verse: "第三次打发仆人去，他们又打伤了他，把他推出去了。"
+            },
+            {
+                q: "主人后来决定打发谁去？",
+                options: ["军队。", "我的爱子。", "更多的仆人。", "法官。"],
+                answer: 1,
+                ref: "路加福音 20:13",
+                verse: "园主说：‘我怎么办呢？我要打发我的爱子去...’"
+            },
+            {
+                q: "主人为什么认为园户会尊敬他的儿子？",
+                options: ["因为儿子带着兵器。", "或者他们尊敬他。", "因为儿子是王。", "因为儿子有权柄。"],
+                answer: 1,
+                ref: "路加福音 20:13",
+                verse: "“...或者他们尊敬他。”"
+            },
+            {
+                q: "园户看见主人的儿子后彼此怎样商量？",
+                options: ["这是承受产业的，我们杀他吧，使产业归于我们。", "我们赶紧把果子交给他吧。", "我们逃跑吧。", "我们向他求情吧。"],
+                answer: 0,
+                ref: "路加福音 20:14",
+                verse: "不料，园户看见他，就彼此商量说：‘这是承受产业的，我们杀他吧，使产业归于我们！’"
+            },
+            {
+                q: "园户把主人的儿子怎样了？",
+                options: ["把他赶走了。", "把他推出葡萄园外杀了。", "把他抓起来交给官府。", "把他卖给外邦人。"],
+                answer: 1,
+                ref: "路加福音 20:15",
+                verse: "于是把他推出葡萄园外杀了。"
+            },
+            {
+                q: "耶稣问众人，葡萄园的主人要怎样处治这些园户？",
+                options: ["要原谅他们。", "要来除灭这些园户，将葡萄园转给别人。", "要把他们下在监里。", "要罚他们的钱。"],
+                answer: 1,
+                ref: "路加福音 20:15-16",
+                verse: "这样，葡萄园的主人要怎样处治他们呢？他要来除灭这些园户，将葡萄园转给别人。"
+            },
+            {
+                q: "众人听见这话怎样回答？",
+                options: ["阿们！", "这是万不可的。", "他们真是罪有应得。", "主啊，不要这样。"],
+                answer: 1,
+                ref: "路加福音 20:16",
+                verse: "听见的人说：“这是万不可的！”"
+            },
+            {
+                q: "耶稣引用了哪句话？",
+                options: ["匠人所弃的石头，已作了房角的头块石头。", "主所爱的，他必管教。", "伸冤在我，我必报应。", "天国是努力进入的。"],
+                answer: 0,
+                ref: "路加福音 20:17",
+                verse: "耶稣看着他们说：“经上记着：‘匠人所弃的石头，已作了房角的头块石头。’这是什么意思呢？”"
+            },
+            {
+                q: "凡掉在这石头上的会怎样？",
+                options: ["必要跌碎。", "必要得救。", "必要受伤。", "必要灭亡。"],
+                answer: 0,
+                ref: "路加福音 20:18",
+                verse: "“凡掉在那石头上的，必要跌碎；”"
+            },
+            {
+                q: "这石头掉在谁的身上会怎样？",
+                options: ["就要把谁压死。", "就要把谁砸得稀烂。", "那人必要悔改。", "那人必不至动摇。"],
+                answer: 1,
+                ref: "路加福音 20:18",
+                verse: "“那石头掉在谁的身上，就要把谁砸得稀烂。”"
+            },
+            {
+                q: "谁想下手拿耶稣？",
+                options: ["祭司长和文士。", "法利赛人和撒都该人。", "罗马兵丁。", "彼拉多。"],
+                answer: 0,
+                ref: "路加福音 20:19",
+                verse: "文士和祭司长看出这比喻是指着他们说的，当时就想要下手拿他..."
+            },
+            {
+                q: "他们为什么想拿耶稣？",
+                options: ["因为耶稣干犯了安息日。", "看出这比喻是指着他们说的。", "因为耶稣自称是神的儿子。", "因为耶稣赶鬼。"],
+                answer: 1,
+                ref: "路加福音 20:19",
+                verse: "文士和祭司长看出这比喻是指着他们说的，当时就想要下手拿他..."
+            },
+            {
+                q: "他们为什么没有立刻下手？",
+                options: ["因为时候还没有到。", "因为没有抓到把柄。", "惧怕百姓。", "因为彼拉多不准。"],
+                answer: 2,
+                ref: "路加福音 20:19",
+                verse: "文士和祭司长...当时就想要下手拿他，只是惧怕百姓。"
+            },
+            {
+                q: "宗教领袖后来打发什么样的人去见耶稣？",
+                options: ["几个法利赛人。", "几个罗马兵丁。", "奸细。", "几个撒都该人。"],
+                answer: 2,
+                ref: "路加福音 20:20",
+                verse: "于是窥探耶稣，打发奸细装作好人..."
+            },
+            {
+                q: "奸细装作什么样的人？",
+                options: ["求问真理的人。", "好人。", "生病求医的人。", "远方来的客旅。"],
+                answer: 1,
+                ref: "路加福音 20:20",
+                verse: "于是窥探耶稣，打发奸细装作好人..."
+            },
+            {
+                q: "奸细的目的是什么？",
+                options: ["要试探他的圣经知识。", "要在耶稣的话上得把柄，好将他交在巡抚的政权之下。", "要骗取耶稣的神迹。", "要激怒百姓。"],
+                answer: 1,
+                ref: "路加福音 20:20",
+                verse: "要在他的话上得把柄，好将他交在巡抚的政权之下。"
+            },
+            {
+                q: "奸细先怎样称赞耶稣？",
+                options: ["你是从神那里来作师傅的。", "你是大卫的子孙。", "夫子，我们晓得你所讲所传都是正道，也不取人的外貌，乃是诚诚实实传神的道。", "你是犹太人的王。"],
+                answer: 2,
+                ref: "路加福音 20:21",
+                verse: "奸细就问耶稣说：“夫子，我们晓得你所讲所传都是正道，也不取人的外貌，乃是诚诚实实传神的道；”"
+            },
+            {
+                q: "奸细向耶稣提出什么问题？",
+                options: ["我们纳税给该撒，可以不可以？", "安息日治病可以不可以？", "休妻可以不可以？", "我们可以不向罗马纳税吗？"],
+                answer: 0,
+                ref: "路加福音 20:22",
+                verse: "“我们纳税给该撒，可以不可以？”"
+            },
+            {
+                q: "耶稣知道了他们什么？",
+                options: ["他们的虚伪。", "他们的计谋。", "他们的恶意。", "诡诈。"],
+                answer: 3,
+                ref: "路加福音 20:23",
+                verse: "耶稣看出他们的诡诈，就对他们说："
+            },
+            {
+                q: "耶稣要他们拿什么给他看？",
+                options: ["一本律法书。", "一个银钱。", "一块石头。", "一根手杖。"],
+                answer: 1,
+                ref: "路加福音 20:24",
+                verse: "“拿一个银钱来给我看。这像和这号是谁的？”"
+            },
+            {
+                q: "耶稣问银钱上的什么？",
+                options: ["这钱是哪国造的？", "这像是谁的？", "这像和这号是谁的？", "这钱有多重？"],
+                answer: 2,
+                ref: "路加福音 20:24",
+                verse: "“拿一个银钱来给我看。这像和这号是谁的？”"
+            },
+            {
+                q: "他们怎样回答？",
+                options: ["是大希律的。", "是该撒的。", "是彼拉多的。", "是罗马的。"],
+                answer: 1,
+                ref: "路加福音 20:24",
+                verse: "他们说：“是该撒的。”"
+            },
+            {
+                q: "耶稣怎样回答他们？",
+                options: ["你们要顺服地上的君王。", "这样，该撒的物当归给该撒，神的物当归给神。", "你们不可给该撒纳税。", "你们要纳税，免得他们跌倒。"],
+                answer: 1,
+                ref: "路加福音 20:25",
+                verse: "耶稣说：“这样，该撒的物当归给该撒，神的物当归给神。”"
+            },
+            {
+                q: "众人在耶稣回答之后有什么反应？",
+                options: ["大声欢呼称赞他。", "他们当着百姓，在这话上得不着把柄，又希奇他的应对，就闭口无言了。", "非常生气，就离开他走了。", "立刻拿石头要打他。"],
+                answer: 1,
+                ref: "路加福音 20:26",
+                verse: "他们当着百姓，在这话上得不着把柄，又希奇他的应对，就闭口无言了。"
+            },
+            {
+                q: "哪一派的人来问耶稣复活的问题？",
+                options: ["法利赛人。", "撒都该人。", "文士。", "奋锐党人。"],
+                answer: 1,
+                ref: "路加福音 20:27",
+                verse: "撒都该人常说没有死人复活的事。有几个来问耶稣说："
+            },
+            {
+                q: "撒都该人相信有复活吗？",
+                options: ["他们相信义人复活。", "不信有复活的事。", "他们相信轮回。", "他们相信末日有复活。"],
+                answer: 1,
+                ref: "路加福音 20:27",
+                verse: "撒都该人常说没有死人复活的事。"
+            },
+            {
+                q: "他们引用了摩西哪条律法？",
+                options: ["当孝敬父母。", "不可杀人。", "人若有妻无子死了，他兄弟当娶他的妻，为哥哥生子立后。", "不可贪恋人的妻子。"],
+                answer: 2,
+                ref: "路加福音 20:28",
+                verse: "“夫子！摩西为我们写着说：‘人若有妻无子就死了，他兄弟当娶他的妻，为哥哥生子立后。’”"
+            },
+            {
+                q: "他们举例说共有几个弟兄？",
+                options: ["三个。", "五个。", "七个。", "十二个。"],
+                answer: 2,
+                ref: "路加福音 20:29",
+                verse: "“有弟兄七人，第一个娶了妻，没有孩子死了；”"
+            },
+            {
+                q: "第一个弟兄死的时候有什么情况？",
+                options: ["留下了巨额财产。", "娶了妻，没有孩子死了。", "被仇敌杀害了。", "病重死了。"],
+                answer: 1,
+                ref: "路加福音 20:29",
+                verse: "“第一个娶了妻，没有孩子死了；”"
+            },
+            {
+                q: "后来是谁娶了那个妇人？",
+                options: ["邻舍。", "她娘家的人。", "第二个、第三个，直到第七个。", "一个祭司。"],
+                answer: 2,
+                ref: "路加福音 20:30-31",
+                verse: "“第二个、第三个也娶过她；那七个人都娶过她...”"
+            },
+            {
+                q: "七个弟兄共同有什么结局？",
+                options: ["都被那妇人害死了。", "都没有留下孩子就死了。", "都成了富翁。", "都活到年老。"],
+                answer: 1,
+                ref: "路加福音 20:31",
+                verse: "“...那七个人都娶过她，没有留下孩子就死了。”"
+            },
+            {
+                q: "最后谁也死了？",
+                options: ["那妇人。", "他们的父母。", "法官。", "问话的人。"],
+                answer: 0,
+                ref: "路加福音 20:32",
+                verse: "“后来那妇人也死了。”"
+            },
+            {
+                q: "撒都该人问复活的时候，那妇人是谁的妻子？",
+                options: ["因为他们七个人都娶过她。", "因为她是第一个人的原配。", "她不是任何人的妻子。", "因为最后一个人娶了她。"],
+                answer: 0,
+                ref: "路加福音 20:33",
+                verse: "“这样，当复活的时候，她是哪一个的妻子呢？因为他们七个人都娶过她。”"
+            },
+            {
+                q: "耶稣说今世之子怎样？",
+                options: ["必有苦难。", "有娶有嫁。", "都犯了罪。", "都是瞎眼的。"],
+                answer: 1,
+                ref: "路加福音 20:34",
+                verse: "耶稣说：“这世界的人有娶有嫁；”"
+            },
+            {
+                q: "配得那世界与从死里复活的人怎样？",
+                options: ["也会有娶有嫁。", "也不娶也不嫁。", "只在天上敬拜。", "成为神。"],
+                answer: 1,
+                ref: "路加福音 20:35",
+                verse: "“惟有算为配得那世界，与从死里复活的人，也不娶也不嫁；”"
+            },
+            {
+                q: "复活的人还能再死吗？",
+                options: ["如果犯罪还会死。", "不能再死。", "会经历第二次死。", "会变老然后死。"],
+                answer: 1,
+                ref: "路加福音 20:36",
+                verse: "“因为他们不能再死...”"
+            },
+            {
+                q: "复活的人像谁？",
+                options: ["和天使一样。", "和先知一样。", "和君王一样。", "和亚伯拉罕一样。"],
+                answer: 0,
+                ref: "路加福音 20:36",
+                verse: "“因为他们不能再死，和天使一样；”"
+            },
+            {
+                q: "复活的人又是什么？",
+                options: ["新造的人。", "天上国民。", "既是复活的人，就为神的儿子。", "天国的君王。"],
+                answer: 2,
+                ref: "路加福音 20:36",
+                verse: "“既是复活的人，就为神的儿子。”"
+            },
+            {
+                q: "耶稣引用摩西哪一段经文证明死人复活？",
+                options: ["出埃及记的十诫。", "创世记的创造篇。", "荆棘篇上。", "申命记的祝福。"],
+                answer: 2,
+                ref: "路加福音 20:37",
+                verse: "“至于死人复活，摩西在荆棘篇上，称主是亚伯拉罕的神，以撒的神，雅各的神，就指示明白了。”"
+            },
+            {
+                q: "神向摩西怎样称呼自己？",
+                options: ["我是全能的神。", "我是自有永有的。", "我是创造天地的主。", "我是亚伯拉罕的神，以撒的神，雅各的神。"],
+                answer: 3,
+                ref: "路加福音 20:37",
+                verse: "“...称主是亚伯拉罕的神，以撒的神，雅各的神...”"
+            },
+            {
+                q: "神不是谁的神？",
+                options: ["外邦人的神。", "罪人的神。", "死人的神。", "骄傲人的神。"],
+                answer: 2,
+                ref: "路加福音 20:38",
+                verse: "“神原不是死人的神，乃是活人的神；”"
+            },
+            {
+                q: "神乃是谁的神？",
+                options: ["义人的神。", "活人的神。", "选民的神。", "天上众军的神。"],
+                answer: 1,
+                ref: "路加福音 20:38",
+                verse: "“神原不是死人的神，乃是活人的神；”"
+            },
+            {
+                q: "为什么说神是活人的神？",
+                options: ["因为在他那里，人都是活的。", "因为他赐人生命。", "因为他医治活人。", "因为他住在人中间。"],
+                answer: 0,
+                ref: "路加福音 20:38",
+                verse: "“因为在他那里（那里：或作看来），人都是活的。”"
+            },
+            {
+                q: "有几个文士听见后怎样评价耶稣？",
+                options: ["他疯了。", "这是亵渎的话。", "夫子，你说得好。", "我们不信他。"],
+                answer: 2,
+                ref: "路加福音 20:39",
+                verse: "有几个文士说：“夫子，你说得好。”"
+            },
+            {
+                q: "从此他们还有胆量问耶稣什么吗？",
+                options: ["他们又问了更难的问题。", "不敢再问他什么。", "他们私下再去问他。", "他们问了关于圣殿的事。"],
+                answer: 1,
+                ref: "路加福音 20:40",
+                verse: "以后他们不敢再问他什么。"
+            },
+            {
+                q: "耶稣最后问众人，为什么人称基督是大卫的子孙？并引用大卫的话是什么？",
+                options: ["主对我主说：你坐在我的右边，等我使你仇敌作你的脚凳。", "主说：你是我的儿子，我今日生你。", "主说：我要作你的父，你要作我的子。", "耶和华对我说：你求我，我就将列国赐你为基业。"],
+                answer: 0,
+                ref: "路加福音 20:42-43",
+                verse: "“诗篇上大卫自己说：主对我主说：你坐在我的右边，等我使你仇敌作你的脚凳。”"
             }
         ];
 
@@ -507,8 +1016,7 @@
         let currentQuestions = [];
         let currentIndex = 0;
         let score = 0;
-        let mistakes = JSON.parse(localStorage.getItem('jesusQuizMistakes') || '[]');
-        let isMistakeMode = false;
+        let mistakes = JSON.parse(localStorage.getItem('jesusQuizMistakesAll') || '[]');
         
         // 计时器变量
         let timerInterval;
@@ -551,13 +1059,26 @@
         }
 
         // === 核心流程控制 ===
-        function startQuiz(mistakeMode) {
-            isMistakeMode = mistakeMode;
-            if (mistakeMode) {
-                currentQuestions = allQuestions.filter(q => mistakes.includes(q.q));
-                if (currentQuestions.length === 0) return;
-            } else {
+        function startQuiz(quizType) {
+            if (quizType === 'main') {
                 currentQuestions = [...allQuestions];
+            } else if (quizType === 'daily') {
+                currentQuestions = [...dailyQuestions];
+            } else if (quizType === 'mistake') {
+                const combinedBank = [...allQuestions, ...dailyQuestions];
+                // 过滤出错题，同时去重避免两边库题干重复导致的冗余
+                const uniqueMistakes = [...new Set(mistakes)];
+                currentQuestions = combinedBank.filter(q => uniqueMistakes.includes(q.q));
+                
+                // 去重处理防重复加载
+                const seen = new Set();
+                currentQuestions = currentQuestions.filter(el => {
+                    const duplicate = seen.has(el.q);
+                    seen.add(el.q);
+                    return !duplicate;
+                });
+
+                if (currentQuestions.length === 0) return;
             }
             
             currentIndex = 0;
@@ -579,19 +1100,20 @@
             document.getElementById('progressText').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
             document.getElementById('progressBar').style.width = `${progress}%`;
             
+            // 安全注入题干
             document.getElementById('questionText').innerText = q.q;
             
             const optionsContainer = document.getElementById('optionsContainer');
             optionsContainer.innerHTML = '';
             
+            // 安全注入选项 (适老化大字号排版)
             q.options.forEach((opt, idx) => {
                 const btn = document.createElement('button');
-                btn.id = `opt-${idx}`;
-                btn.className = "option-btn w-full text-left p-6 rounded-2xl border-2 border-transparent bg-white shadow-sm font-medium text-gray-800 hover:border-gray-200 transition-colors text-xl sm:text-2xl";
+                btn.className = "option-btn w-full text-left p-6 rounded-2xl border-2 border-transparent bg-white shadow-sm font-medium text-gray-800 hover:border-gray-200 transition-colors text-2xl leading-snug";
                 btn.onclick = () => handleAnswer(idx);
                 
                 const span = document.createElement('span');
-                span.className = "inline-block w-10 text-gray-400 font-bold";
+                span.className = "inline-block w-12 text-gray-400 font-bold";
                 span.innerText = `${String.fromCharCode(65 + idx)}.`;
                 
                 const textNode = document.createTextNode(` ${opt}`);
@@ -616,7 +1138,7 @@
             const isCorrect = selectedIndex === q.answer;
             const options = document.querySelectorAll('.option-btn');
             
-            // 禁用所有选项
+            // 禁用所有选项并标记颜色
             options.forEach((btn, idx) => {
                 btn.classList.add('option-disabled');
                 if (idx === q.answer) {
@@ -626,14 +1148,14 @@
                 }
             });
             
-            // 记录错题或移除错题
+            // 错题收集与订正机制
             if (isCorrect) {
                 score++;
-                if (isMistakeMode) {
-                    mistakes = mistakes.filter(mistake => mistake !== q.q);
-                    saveMistakes();
-                }
+                // 答对了，就从总错题本里将其移除
+                mistakes = mistakes.filter(mistake => mistake !== q.q);
+                saveMistakes();
             } else {
+                // 答错了，若不在错题本则加入
                 if (!mistakes.includes(q.q)) {
                     mistakes.push(q.q);
                     saveMistakes();
@@ -645,11 +1167,11 @@
             const feedbackBanner = document.getElementById('feedbackBanner');
             
             if (isCorrect) {
-                feedbackBanner.className = "p-4 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-xl bg-green-100 text-green-700";
-                feedbackBanner.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> 回答正确`;
+                feedbackBanner.className = "p-5 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-2xl bg-green-100 text-green-700";
+                feedbackBanner.innerHTML = `<svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> 回答正确`;
             } else {
-                feedbackBanner.className = "p-4 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-xl bg-red-100 text-red-700";
-                feedbackBanner.innerHTML = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg> 回答错误，正确答案是 ${String.fromCharCode(65 + q.answer)}`;
+                feedbackBanner.className = "p-5 rounded-2xl mb-4 font-bold text-center flex items-center justify-center text-2xl bg-red-100 text-red-700";
+                feedbackBanner.innerHTML = `<svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg> 回答错误，正确答案是 ${String.fromCharCode(65 + q.answer)}`;
             }
             
             document.getElementById('feedbackRef').innerText = `【${q.ref}】`;
@@ -661,7 +1183,7 @@
             const nextBtn = document.getElementById('nextBtn');
             nextBtn.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
             
-            // 自动滚动到底部以便看清反馈和按钮 (平滑滚动)
+            // 自动平滑滚动到底部
             setTimeout(() => {
                 document.getElementById('questionArea').scrollTo({
                     top: document.getElementById('questionArea').scrollHeight,
@@ -699,12 +1221,12 @@
             
             if (score === currentQuestions.length) {
                 resultDesc.innerText = "太棒了！全答对了！";
-                resultIcon.className = "w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6";
-                resultIcon.innerHTML = `<svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+                resultIcon.className = "w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6";
+                resultIcon.innerHTML = `<svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
             } else {
                 resultDesc.innerText = `还需要继续努力熟悉经文哦`;
-                resultIcon.className = "w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6";
-                resultIcon.innerHTML = `<svg class="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                resultIcon.className = "w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mb-6";
+                resultIcon.innerHTML = `<svg class="w-12 h-12 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
             }
         }
 
@@ -716,7 +1238,7 @@
         }
 
         function saveMistakes() {
-            localStorage.setItem('jesusQuizMistakes', JSON.stringify(mistakes));
+            localStorage.setItem('jesusQuizMistakesAll', JSON.stringify(mistakes));
         }
     </script>
 </body>
